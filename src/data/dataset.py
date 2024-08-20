@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import torch
 from PIL import Image
@@ -20,7 +22,8 @@ class ImageDataset(Dataset):
         return len(self.df)
 
     def __getitem__(self, idx):
-        image_path = self.df.iloc[idx]['frame_path']
+        image_path = Path(self.df.iloc[idx]['frame_path'])
+        image_path = image_path.as_posix()
         label = self.df.iloc[idx]['class']
 
         with Image.open(image_path) as img:
