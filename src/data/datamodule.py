@@ -34,7 +34,6 @@ class DataModule(LightningDataModule):
         return X_test
 
     def __load_data(self, test_set=False):
-        # Load Data
         train_val_path = os.path.join(self.dataset_csv_path, 'train_val.csv')
 
         if test_set:
@@ -44,15 +43,9 @@ class DataModule(LightningDataModule):
 
         X_train_val = pd.read_csv(train_val_path)
 
-        # Parse K-Fold Split
         print(f"Using fold {self.fold_idx} for validation.")
         X_train = X_train_val[X_train_val['fold'] != self.fold_idx]
         X_val = X_train_val[X_train_val['fold'] == self.fold_idx]
-
-        # Drop fold column
-        X_train = X_train.drop(columns=['fold'])
-        X_val = X_val.drop(columns=['fold'])
-        # logging.info(f"Train Size: {len(X_train)}, Val Size: {len(X_val)}, Test Size: {len(X_test)}")
 
         # Apply the optimized path update
         self.vectorized_path_update(X_train)
