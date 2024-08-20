@@ -48,7 +48,6 @@ class AbstractLightningModule(LightningModule, ABC):
         self.criterion = nn.CrossEntropyLoss()
 
         self.__setup_model_fine_tuning()
-        self.__setup_criterion()
         self.__setup_metrics()
 
         self.best_val_AUC_macro = float('-inf')
