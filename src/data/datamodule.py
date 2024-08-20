@@ -10,7 +10,7 @@ from src.data.dataset import ImageDataset
 
 class DataModule(LightningDataModule):
     def __init__(self, class_mapping, transforms, train_bs, val_bs, dataset_path, dataset_csv_path, fold_idx=0,
-                 num_workers=8, multilabel=False):
+                 num_workers=8):
         super().__init__()
         self.train_bs, self.val_bs = train_bs, val_bs
         self.dataset_path = dataset_path
@@ -18,7 +18,6 @@ class DataModule(LightningDataModule):
         self.fold_idx = fold_idx
         self.num_workers = num_workers
         self.train_transform, self.val_transform = transforms
-        self.multilabel = multilabel
 
         self.datasets = {}
         self.class_to_index = class_mapping
@@ -57,12 +56,12 @@ class DataModule(LightningDataModule):
         X_train, X_val, X_test = self.__load_data()
 
         self.datasets = {
-            'train': ImageDataset(X_train, self.class_to_index, self.train_transform, self.multilabel),
-            'val': ImageDataset(X_val, self.class_to_index, self.val_transform, self.multilabel),
+            'train': ImageDataset(X_train, self.class_to_index, self.train_transform),
+            'val': ImageDataset(X_val, self.class_to_index, self.val_transform),
         }
 
         if X_test is not None:
-            self.datasets['test'] = ImageDataset(X_test, self.class_to_index, self.val_transform, self.multilabel)
+            self.datasets['test'] = ImageDataset(X_test, self.class_to_index, self.val_transform)
         self.calculate_inverse_weights(X_train)
 
     def calculate_inverse_weights(self, df):

@@ -122,8 +122,7 @@ def prepare_datamodule(config, class_mapping, num_workers=8):
         dataset_path=config.dataset_path,
         dataset_csv_path=config.dataset_csv_path,
         fold_idx=config.fold_id,
-        num_workers=num_workers,
-        multilabel=True
+        num_workers=num_workers
     )
 
 
