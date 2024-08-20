@@ -71,7 +71,9 @@ class DataModule(LightningDataModule):
         print('Train Value Counts:', X_train['class'].value_counts())
 
         # Apply the optimized path update
+        print(X_train['frame_path'][0])
         self.vectorized_path_update(X_train)
+        print(X_train['frame_path'][0])
         self.vectorized_path_update(X_val)
 
         return X_train, X_val, X_test
