@@ -6,7 +6,7 @@ model_arch: regnety_640.seer
 seed: 69
 train_bs: 256
 val_bs: 256
-num_workers: 12
+num_workers: 0
 dataset_path: "../data/"
 dataset_csv_path: "dataset"
 wandb_project: "CV2024"
