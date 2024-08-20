@@ -1,6 +1,7 @@
 .idea
 data
 capsulevision
+*.ipynb_checkpoints
 
 
 /wandb/
