@@ -16,7 +16,6 @@ from lightning.pytorch.loggers import WandbLogger
 import wandb
 from src.data.datamodule import DataModule
 from src.models.enums.finetune_mode import FineTuneMode
-from src.models.enums.model_mode import ModelMode
 from src.models.regnety.regnety import RegNetY
 from src.utils.class_mapping import load_class_mapping
 
@@ -120,7 +119,6 @@ class TrainHandler:
             logging.info("No CUDA GPUs are available")
 
         train_bs = 64
-
         val_bs = train_bs
 
         # If given, override with the provided batch sizes
@@ -139,7 +137,6 @@ class TrainHandler:
         class_mapping = TrainHandler.__prepare_class_mapping(args)
         transforms = TrainHandler.__prepare_transforms(args)
         train_bs, val_bs = TrainHandler.__get_batch_size(args)
-        multilabel = args.model_mode == ModelMode.MULTI_LABEL.value
 
         return DataModule(
             class_mapping=class_mapping,
@@ -150,7 +147,6 @@ class TrainHandler:
             dataset_csv_path=args.dataset_csv_path,
             fold_idx=args.fold_id,
             num_workers=args.num_workers,
-            multilabel=multilabel
         )
 
     @staticmethod
@@ -239,9 +235,6 @@ def arg_parser():
     # === Training Modes ===
     parser.add_argument("--ft_mode", type=str, choices=[mode.value for mode in FineTuneMode], default='head',
                         help="Fine-tune mode: 'head' only the head, 'backbone' only the backbone, or 'full' both head and backbone.")
-    parser.add_argument("--model_mode", type=str, choices=[mode.value for mode in ModelMode], default='multi-class',
-                        help="Model mode: 'multi-class' for single class per instance or 'multi-label' for multiple classes per instance.")
-
     # === Model ===
     parser.add_argument("--model_arch", default="regnety_640.seer", type=str)
     parser.add_argument("--model_type", default="seer", type=str)

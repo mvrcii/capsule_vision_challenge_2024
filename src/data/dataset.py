@@ -5,7 +5,7 @@ from torch.utils.data import Dataset
 
 
 class ImageDataset(Dataset):
-    def __init__(self, df, class_to_index, transform, multilabel=False):
+    def __init__(self, df, class_to_index, transform):
         """
         df: Pandas DataFrame containing 'frame_path', and 'class' columns.
         class_to_index: A dictionary mapping class names to indices.
@@ -15,7 +15,6 @@ class ImageDataset(Dataset):
         self.df = df
         self.class_to_index = class_to_index
         self.transform = transform
-        self.multilabel = multilabel
 
     def __len__(self):
         return len(self.df)
@@ -31,11 +30,6 @@ class ImageDataset(Dataset):
                 augmented = self.transform(image=image_np)
                 image_tensor = augmented['image']
 
-        if self.multilabel:
-            label_indices = [self.class_to_index[cls] for cls in label.split(',')]
-            label_tensor = torch.zeros(len(self.class_to_index))
-            label_tensor[label_indices] = 1
-        else:
-            label_tensor = torch.tensor(self.class_to_index[label], dtype=torch.long)
+        label_tensor = torch.tensor(self.class_to_index[label], dtype=torch.long)
 
         return image_tensor, label_tensor
