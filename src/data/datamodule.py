@@ -24,7 +24,7 @@ class DataModule(LightningDataModule):
         self.sample_weights = []
 
     def vectorized_path_update(self, dataset):
-        dataset['frame_path'] = self.dataset_path + dataset['frame_path']
+        dataset['frame_path'] = self.dataset_path + dataset['frame_path'].replace('\\', '/')
 
     def __load_test_data(self):
         test_path = os.path.join(self.dataset_csv_path, 'test.csv')
