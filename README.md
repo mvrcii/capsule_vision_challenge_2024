@@ -1,1 +1,1 @@
-# cv2024
+# Capsule Vision Challenge 2024
