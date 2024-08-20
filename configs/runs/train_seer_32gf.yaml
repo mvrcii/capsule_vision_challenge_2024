@@ -3,7 +3,7 @@ img_size: 224
 lr: 0.01
 max_epochs: 25
 model_arch: regnety_640.seer
-seed: 69
+seed: 42
 train_bs: 128
 val_bs: 128
 num_workers: 31
