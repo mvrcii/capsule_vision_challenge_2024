@@ -1,0 +1,16 @@
+opencv-python
+numpy
+packaging
+setuptools
+pillow
+lightning
+scikit-learn
+timm
+wandb
+matplotlib
+einops
+albumentations
+PyYAML
+seaborn
+
+
