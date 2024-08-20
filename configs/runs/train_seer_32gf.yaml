@@ -7,7 +7,7 @@ seed: 42
 train_bs: 32
 val_bs: 64
 num_workers: 0
-dataset_path: "data/"
+dataset_path: "../data/"
 dataset_csv_path: "dataset"
 wandb_project: "CV2024"
 entity: "wuesuv"
