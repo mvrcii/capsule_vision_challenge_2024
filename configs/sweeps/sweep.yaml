@@ -1,5 +1,5 @@
 program: train.py
-project: "SEER"
+project: "CV2024"
 method: grid
 metric:
   goal: maximize
@@ -11,23 +11,21 @@ parameters:
 
   # === Training ===
   max_epochs:
-    values: [ 100 ]
-  fold_id:
-    values: [ 0, 1, 2, 3 ]
+    values: [ 25 ]
   seed:
-    values: [ 1, 5, 8, 11 ]
+    values: [ 42 ]
   train_bs:
     values: [ 64 ]
   val_bs:
     values: [ 64 ]
   img_size:
-    values: [ 224 ]
+    values: [ 224, 128, 96, 64, 32 ]
 
   # === Optimizer ===
   optimizer:
     values: [ 'adabelief' ]
   lr:
-    values: [ 0.03 ]
+    values: [ 0.03, 0.01]
 
   # === Scheduler ===
   scheduler:
