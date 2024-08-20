@@ -32,6 +32,25 @@ class DataModule(LightningDataModule):
         self.vectorized_path_update(X_test)
         return X_test
 
+    @staticmethod
+    def __balance_classes(df, random_state=42):
+        df = df.copy()
+        class_counts = df['class'].value_counts()
+        # Determine the smallest number of instances among the classes, except the most dominant
+        target_class_size = class_counts.sort_values(ascending=False)[1]  # Index 1 for the second most frequent class
+
+        balanced_df = pd.DataFrame()
+
+        for class_value in class_counts.index:
+            class_subset = df[df['class'] == class_value]
+            if class_counts[class_value] > target_class_size:
+                class_subset = class_subset.sample(n=target_class_size, random_state=random_state)
+            balanced_df = pd.concat([balanced_df, class_subset], axis=0)
+
+        # Shuffle the DataFrame to avoid any ordering issues later on
+        balanced_df = balanced_df.sample(frac=1, random_state=random_state).reset_index(drop=True)
+        return balanced_df
+
     def __load_data(self, test_set=False):
         train_val_path = os.path.join(self.dataset_csv_path, 'train_val.csv')
 
@@ -45,6 +64,11 @@ class DataModule(LightningDataModule):
         print(f"Using fold {self.fold_idx} for validation.")
         X_train = X_train_val[X_train_val['fold'] != self.fold_idx]
         X_val = X_train_val[X_train_val['fold'] == self.fold_idx]
+
+        # Apply class balancing
+        X_train = self.__balance_classes(X_train)
+        # X_val = self.__balance_classes(X_val)
+        print('Train Value Counts:', X_train['class'].value_counts())
 
         # Apply the optimized path update
         self.vectorized_path_update(X_train)
@@ -72,12 +96,12 @@ class DataModule(LightningDataModule):
     def train_dataloader(self):
         sampler = WeightedRandomSampler(self.sample_weights, num_samples=len(self.datasets['train']))
         return DataLoader(self.datasets['train'], batch_size=self.train_bs, sampler=sampler, drop_last=True,
-                          prefetch_factor=2, pin_memory=True, persistent_workers=True, num_workers=self.num_workers)
+                          pin_memory=True, num_workers=self.num_workers)
 
     def val_dataloader(self):
         return DataLoader(self.datasets['val'], drop_last=True, pin_memory=True, batch_size=self.val_bs,
-                          prefetch_factor=2, persistent_workers=True, num_workers=self.num_workers)
+                          num_workers=self.num_workers)
 
     def test_dataloader(self):
         return DataLoader(self.datasets['test'], drop_last=True, pin_memory=True, batch_size=self.val_bs,
-                          persistent_workers=True, num_workers=self.num_workers)
+                          num_workers=self.num_workers)
