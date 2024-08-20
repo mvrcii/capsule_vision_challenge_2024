@@ -200,7 +200,7 @@ class AbstractLightningModule(LightningModule, ABC):
 
         self.log(f'{mode}_precision_weighted', self.precision_weighted(preds, labels), on_epoch=True, prog_bar=False)
         self.log(f'{mode}_recall_weighted', self.recall_weighted(preds, labels), on_epoch=True, prog_bar=False)
-        self.log(f'{mode}_f1_weighted', self.f1_weighted(preds, labels), on_epoch=True, prog_bar=True)
+        self.log(f'{mode}_f1_weighted', self.f1_weighted(preds, labels), on_epoch=True, prog_bar=False)
 
         self.log(f'{mode}_precision_macro', self.precision_macro(preds, labels), on_epoch=True, prog_bar=False)
         self.log(f'{mode}_recall_macro', self.recall_macro(preds, labels), on_epoch=True, prog_bar=False)
@@ -220,7 +220,7 @@ class AbstractLightningModule(LightningModule, ABC):
         self.log(f"{mode}_AUC_weighted", self.AUC_weighted(preds, labels), on_step=False, on_epoch=True, prog_bar=True)
 
         self.log(f"{mode}_mAP_macro", self.mAP_macro(preds, labels), on_step=False, on_epoch=True, prog_bar=False)
-        self.log(f"{mode}_AUC_macro", self.AUC_macro(preds, labels), on_step=False, on_epoch=True, prog_bar=False)
+        self.log(f"{mode}_AUC_macro", self.AUC_macro(preds, labels), on_step=False, on_epoch=True, prog_bar=True)
 
         # Per-Class metrics logging
         mAP_pc = torch.nan_to_num(self.mAP_per_class(preds, labels), 0.0)
