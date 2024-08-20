@@ -68,14 +68,12 @@ class DataModule(LightningDataModule):
         X_val = X_train_val[X_train_val['fold'] == self.fold_idx]
 
         # Apply class balancing
-        X_train = self.__balance_classes(X_train)
-        # X_val = self.__balance_classes(X_val)
-        print('Train Value Counts:', X_train['class'].value_counts())
+        # X_train = self.__balance_classes(X_train)
+        # # X_val = self.__balance_classes(X_val)
+        # print('Train Value Counts:', X_train['class'].value_counts())
 
         # Apply the optimized path update
-        print(X_train['frame_path'][0])
         X_train = self.vectorized_path_update(X_train)
-        print(X_train['frame_path'][0])
         X_val = self.vectorized_path_update(X_val)
 
         return X_train, X_val, X_test
