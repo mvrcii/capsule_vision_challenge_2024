@@ -24,12 +24,14 @@ class DataModule(LightningDataModule):
         self.sample_weights = []
 
     def vectorized_path_update(self, dataset):
-        dataset['frame_path'] = self.dataset_path + dataset['frame_path'].replace('\\', '/')
+        dataset['frame_path'] = dataset['frame_path'].apply(
+            lambda x: os.path.join(self.dataset_path, x).replace('\\', '/'))
+        return dataset
 
     def __load_test_data(self):
         test_path = os.path.join(self.dataset_csv_path, 'test.csv')
         X_test = pd.read_csv(test_path)
-        self.vectorized_path_update(X_test)
+        X_test = self.vectorized_path_update(X_test)
         return X_test
 
     @staticmethod
@@ -72,9 +74,9 @@ class DataModule(LightningDataModule):
 
         # Apply the optimized path update
         print(X_train['frame_path'][0])
-        self.vectorized_path_update(X_train)
+        X_train = self.vectorized_path_update(X_train)
         print(X_train['frame_path'][0])
-        self.vectorized_path_update(X_val)
+        X_val = self.vectorized_path_update(X_val)
 
         return X_train, X_val, X_test
 
