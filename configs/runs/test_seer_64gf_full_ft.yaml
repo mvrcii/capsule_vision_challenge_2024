@@ -1,0 +1,7 @@
+fold_id: 3
+img_size: 224
+ft_head: True
+ft_backbone: True
+train_bs: 16
+val_bs: 64
+lr: 1e-6

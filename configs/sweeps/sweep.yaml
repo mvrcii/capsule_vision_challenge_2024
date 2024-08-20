@@ -1,0 +1,41 @@
+program: train.py
+project: "SEER"
+method: grid
+metric:
+  goal: maximize
+  name: val_mAP
+parameters:
+  # === Model ===
+  model_arch:
+    values: [ 'regnety_640.seer' ]
+
+  # === Training ===
+  max_epochs:
+    values: [ 100 ]
+  fold_id:
+    values: [ 0, 1, 2, 3 ]
+  seed:
+    values: [ 1, 5, 8, 11 ]
+  train_bs:
+    values: [ 64 ]
+  val_bs:
+    values: [ 64 ]
+  img_size:
+    values: [ 224 ]
+
+  # === Optimizer ===
+  optimizer:
+    values: [ 'adabelief' ]
+  lr:
+    values: [ 0.03 ]
+
+  # === Scheduler ===
+  scheduler:
+    values: [ 'cosine' ]
+  eta_min:
+    values: [ 0.005 ]
+
+command:
+  - ${env}
+  - python
+  - ${program}
