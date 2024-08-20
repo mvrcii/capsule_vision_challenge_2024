@@ -3,7 +3,7 @@ project: "SEER"
 method: grid
 metric:
   goal: maximize
-  name: val_mAP
+  name: val_AUC_macro
 parameters:
   # === Model ===
   model_arch:

@@ -54,13 +54,13 @@ class TrainHandler:
             directory_name = f"sweep-{sweep_id}"
             checkpoint_dir = os.path.join(config.checkpoint_dir, directory_name)
             os.makedirs(checkpoint_dir, exist_ok=True)
-            filename = f"{run_name}_epoch{{epoch:02d}}_val_mAP_weighted{{val_mAP_weighted:.2f}}"
+            filename = f"{run_name}_epoch{{epoch:02d}}_val_AUC_macro{{val_AUC_macro:.2f}}"
         else:
             # FORMAT: <checkpoint_dir>/run-<timestamp>-<run_name>/
             directory_name = f"run-{timestamp}-{run_name}"
             checkpoint_dir = os.path.join(config.checkpoint_dir, directory_name)
             os.makedirs(checkpoint_dir, exist_ok=True)
-            filename = f"best_epoch{{epoch:02d}}_val_mAP_weighted{{val_mAP_weighted:.2f}}"
+            filename = f"best_epoch{{epoch:02d}}_val_AUC_macro{{val_AUC_macro:.2f}}"
 
         checkpoint_callback = ModelCheckpoint(
             dirpath=checkpoint_dir,
@@ -68,7 +68,7 @@ class TrainHandler:
             save_top_k=1,
             save_weights_only=False,
             mode='max',
-            monitor="val_mAP_weighted",
+            monitor="val_AUC_macro",
             verbose=config.verbose,
             auto_insert_metric_name=False
         )
@@ -210,7 +210,7 @@ def main(args):
 
     trainer = TrainHandler(args)
     trainer.train()
-    trainer.test()
+    # trainer.test()
 
     wandb.finish()
 

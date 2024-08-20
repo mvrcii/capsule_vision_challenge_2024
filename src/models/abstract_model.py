@@ -54,7 +54,7 @@ class AbstractLightningModule(LightningModule, ABC):
         self.__setup_criterion()
         self.__setup_metrics()
 
-        self.best_val_mAP_weighted = float('-inf')
+        self.best_val_AUC_macro = float('-inf')
 
     @abstractmethod
     def init_backbone(self):
@@ -86,7 +86,7 @@ class AbstractLightningModule(LightningModule, ABC):
         else:
             raise ValueError(f"Invalid scheduler: {self.config.scheduler}")
 
-        return {"optimizer": optimizer, "lr_scheduler": {"scheduler": scheduler, "monitor": "val_mAP_weighted"}}
+        return {"optimizer": optimizer, "lr_scheduler": {"scheduler": scheduler, "monitor": "val_AUC_macro"}}
 
     def forward(self, x):
         """
@@ -143,9 +143,9 @@ class AbstractLightningModule(LightningModule, ABC):
 
         self.__log_epoch_metrics(all_labels=self.val_labels, all_preds=self.val_preds, mode='val')
 
-        current_val_metric = self.trainer.logged_metrics.get('val_mAP_weighted')
-        if current_val_metric > self.best_val_mAP_weighted:
-            self.best_val_mAP_weighted = current_val_metric
+        current_val_metric = self.trainer.logged_metrics.get('val_AUC_macro')
+        if current_val_metric > self.best_val_AUC_macro:
+            self.best_val_AUC_macro = current_val_metric
             self.__log_conf_matrix(all_labels=self.val_labels, all_preds=self.val_preds, mode='val')
             self.__log_roc_curve(mode='val')
 
@@ -292,7 +292,7 @@ class AbstractLightningModule(LightningModule, ABC):
             class_label = self.class_names[i]
             self.log(f"{mode}_AUC_{class_label}", score.item(), on_step=False, on_epoch=True, prog_bar=False)
 
-    def create_multilabel_conf_matrix(self, labels, preds, val_mAP_weighted=None, epoch=None):
+    def create_multilabel_conf_matrix(self, labels, preds, val_AUC_macro=None, epoch=None):
         sns.set_style("white")
         sns.set_context("paper")
 
@@ -346,15 +346,15 @@ class AbstractLightningModule(LightningModule, ABC):
         cbar.set_ticklabels(['0%', '20%', '40%', '60%', '80%', '100%'])
 
         current_epoch = epoch if epoch else self.trainer.current_epoch
-        val_mAP_weighted = (val_mAP_weighted if val_mAP_weighted else self.best_val_mAP_weighted) * 100
-        fig.suptitle(f'Confusion Matrix (Epoch={current_epoch}; val_mAP_weighted={val_mAP_weighted:.2f})',
+        val_AUC_macro = (val_AUC_macro if val_AUC_macro else self.best_val_AUC_macro) * 100
+        fig.suptitle(f'Confusion Matrix (Epoch={current_epoch}; val_AUC_macro={val_AUC_macro:.2f})',
                      fontsize=18, weight='bold')
 
         plt.subplots_adjust(left=0.15, right=0.88, bottom=0.15, top=0.9, wspace=0.4)
 
         return fig
 
-    def create_multiclass_conf_matrix(self, labels, preds, val_mAP_weighted=None, epoch=None):
+    def create_multiclass_conf_matrix(self, labels, preds, val_AUC_macro=None, epoch=None):
         sns.set_style("white")
         sns.set_style("ticks")
 
@@ -398,14 +398,14 @@ class AbstractLightningModule(LightningModule, ABC):
         ax.set_xlabel('Predicted Label', fontsize=14, weight='bold')
         ax.set_ylabel('True Label', fontsize=14, weight='bold')
         current_epoch = epoch if epoch else self.trainer.current_epoch
-        val_mAP_weighted = (val_mAP_weighted if val_mAP_weighted else self.best_val_mAP_weighted) * 100
-        ax.set_title(f'Confusion Matrix (Epoch={current_epoch}; val_mAP_weighted={val_mAP_weighted:.2f})', fontsize=18,
+        val_AUC_macro = (val_AUC_macro if val_AUC_macro else self.best_val_AUC_macro) * 100
+        ax.set_title(f'Confusion Matrix (Epoch={current_epoch}; val_AUC_macro={val_AUC_macro:.2f})', fontsize=18,
                      weight='bold',
                      pad=15)
 
         if self.verbose:
             logging.info(
-                f"Val mAP increased: Logging Confusion Matrix (Epoch={current_epoch}; val_mAP_weighted={val_mAP_weighted:.2f})")
+                f"Val AUC increased: Logging Confusion Matrix (Epoch={current_epoch}; val_AUC_macro={val_AUC_macro:.2f})")
         plt.tight_layout()
 
         return fig
