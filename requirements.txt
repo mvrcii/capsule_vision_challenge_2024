@@ -12,5 +12,5 @@ einops
 albumentations
 PyYAML
 seaborn
-
-
+adabelief-pytorch
+torchmetrics
