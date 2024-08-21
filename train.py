@@ -17,6 +17,7 @@ import wandb
 from src.data.datamodule import DataModule
 from src.models.enums.finetune_mode import FineTuneMode
 from src.models.regnety.regnety import RegNetY
+from src.models.vit.vit import ViT
 from src.utils.class_mapping import load_class_mapping
 
 warnings.filterwarnings("ignore", category=UserWarning, module='pydantic')
@@ -170,7 +171,10 @@ class TrainHandler:
 
     def __prepare_model(self, config):
         with self.trainer.init_module():
-            return RegNetY(config, class_to_idx=self.class_mapping)
+            if config.model_type == "seer":
+                return RegNetY(config, class_to_idx=self.class_mapping)
+            elif config.model_type == "vit":
+                return ViT(config, class_to_idx=self.class_mapping)
 
 
 def main(args):
