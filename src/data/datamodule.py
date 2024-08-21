@@ -1,3 +1,4 @@
+import logging
 import os
 
 import pandas as pd
@@ -24,12 +25,15 @@ class DataModule(LightningDataModule):
         self.sample_weights = []
 
     def vectorized_path_update(self, dataset):
-        dataset['frame_path'] = self.dataset_path + dataset['frame_path'].replace('\\', '/')
+        dataset = dataset.copy()
+        dataset.loc[:, 'frame_path'] = dataset['frame_path'].apply(
+            lambda x: os.path.join(self.dataset_path, x).replace('\\', '/'))
+        return dataset
 
     def __load_test_data(self):
         test_path = os.path.join(self.dataset_csv_path, 'test.csv')
         X_test = pd.read_csv(test_path)
-        self.vectorized_path_update(X_test)
+        X_test = self.vectorized_path_update(X_test)
         return X_test
 
     @staticmethod
@@ -61,18 +65,27 @@ class DataModule(LightningDataModule):
 
         X_train_val = pd.read_csv(train_val_path)
 
-        print(f"Using fold {self.fold_idx} for validation.")
+        unique_fold_idcs = X_train_val['fold'].unique()
+        val_fold_idx = self.fold_idx
+
+        if val_fold_idx not in unique_fold_idcs:
+            raise ValueError(f"Fold index {val_fold_idx} not found in the available folds: {unique_fold_idcs}")
+
+        train_fold_idcs = unique_fold_idcs[unique_fold_idcs != val_fold_idx]
+        logging.info(f"DataModule: Fold(s) {train_fold_idcs} used for training")
+        logging.info(f"DataModule: Fold {val_fold_idx} used for validation")
+
         X_train = X_train_val[X_train_val['fold'] != self.fold_idx]
         X_val = X_train_val[X_train_val['fold'] == self.fold_idx]
 
         # Apply class balancing
-        X_train = self.__balance_classes(X_train)
-        # X_val = self.__balance_classes(X_val)
-        print('Train Value Counts:', X_train['class'].value_counts())
+        # X_train = self.__balance_classes(X_train)
+        # # X_val = self.__balance_classes(X_val)
+        # print('Train Value Counts:', X_train['class'].value_counts())
 
         # Apply the optimized path update
-        self.vectorized_path_update(X_train)
-        self.vectorized_path_update(X_val)
+        X_train = self.vectorized_path_update(X_train)
+        X_val = self.vectorized_path_update(X_val)
 
         return X_train, X_val, X_test
 

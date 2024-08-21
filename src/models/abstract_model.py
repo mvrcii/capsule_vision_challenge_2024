@@ -52,6 +52,9 @@ class AbstractLightningModule(LightningModule, ABC):
 
         self.best_val_AUC_macro = float('-inf')
 
+        if checkpoint_path:
+            self.load_backbone_weights()
+
     @abstractmethod
     def init_backbone(self):
         """
@@ -61,7 +64,21 @@ class AbstractLightningModule(LightningModule, ABC):
         pass
 
     def init_classifier(self):
+        logging.info(f"Model: Classifier with {self.num_classes} classes built.")
         return LinearClassifier(in_features=self.backbone.num_features, num_classes=self.num_classes)
+
+    def load_backbone_weights(self):
+        logging.info(f"Loading backbone weights from checkpoint: {self.checkpoint_path}")
+        checkpoint = torch.load(self.checkpoint_path)
+        state_dict = checkpoint['state_dict']
+
+        # Extracting the original number of classes from the classifier's weight shape
+        classifier_weight_key = next((k for k in state_dict.keys() if 'classifier.linear.weight' in k), None)
+        original_num_classes = state_dict[classifier_weight_key].shape[0] if classifier_weight_key else 'Unknown'
+
+        backbone_state_dict = {k.replace('backbone.', ''): v for k, v in state_dict.items() if 'backbone.' in k}
+        self.backbone.load_state_dict(backbone_state_dict, strict=False)
+        logging.info("Classifier changed from {} to {} classes.".format(original_num_classes, self.num_classes))
 
     def configure_optimizers(self):
         trainable_params = list(filter(lambda p: p.requires_grad, self.backbone.parameters())) + \
