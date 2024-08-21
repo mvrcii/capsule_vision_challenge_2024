@@ -1,0 +1,2 @@
+add local conf
+rename fold id to validation fold id
