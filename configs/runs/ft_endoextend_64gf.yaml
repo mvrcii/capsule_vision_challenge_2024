@@ -1,0 +1,15 @@
+fold_id: 1
+img_size: 224
+lr: 0.03
+max_epochs: 100
+seed: 42
+train_bs: 64
+val_bs: 64
+num_workers: 12
+dataset_path: "../data/"
+dataset_csv_path: "dataset"
+wandb_project: "CV2024"
+entity: "wuesuv"
+
+checkpoint_dir: "pretrained_models"
+checkpoint_filename: "apricot-sweep-7_epoch75_val_mAP_weighted0.79.ckpt"
