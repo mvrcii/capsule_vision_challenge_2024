@@ -1,3 +1,4 @@
+import logging
 import os
 
 import pandas as pd
@@ -64,7 +65,16 @@ class DataModule(LightningDataModule):
 
         X_train_val = pd.read_csv(train_val_path)
 
-        print(f"Using fold {self.fold_idx} for validation.")
+        unique_fold_idcs = X_train_val['fold'].unique()
+        val_fold_idx = self.fold_idx
+
+        if val_fold_idx not in unique_fold_idcs:
+            raise ValueError(f"Fold index {val_fold_idx} not found in the available folds: {unique_fold_idcs}")
+
+        train_fold_idcs = unique_fold_idcs[unique_fold_idcs != val_fold_idx]
+        logging.info(f"DataModule: Fold(s) {train_fold_idcs} used for training")
+        logging.info(f"DataModule: Fold {val_fold_idx} used for validation")
+
         X_train = X_train_val[X_train_val['fold'] != self.fold_idx]
         X_val = X_train_val[X_train_val['fold'] == self.fold_idx]
 

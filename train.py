@@ -170,11 +170,27 @@ class TrainHandler:
         )
 
     def __prepare_model(self, config):
-        with self.trainer.init_module():
-            if config.model_type == "seer":
-                return RegNetY(config, class_to_idx=self.class_mapping)
-            elif config.model_type == "vit":
-                return ViT(config, class_to_idx=self.class_mapping)
+        checkpoint_path = TrainHandler.__get_checkpoint_path(config)
+        model_cls = TrainHandler.__get_model_cls(config.model_type)
+        return model_cls(config=config, class_to_idx=self.class_mapping, checkpoint_path=checkpoint_path)
+
+    @staticmethod
+    def __get_model_cls(model_type):
+        if model_type == "seer":
+            return RegNetY
+        elif model_type == "vit":
+            return ViT
+        else:
+            raise ValueError(f"Model type {model_type} is not supported.")
+
+    @staticmethod
+    def __get_checkpoint_path(config):
+        checkpoint_filename = getattr(config, "checkpoint_filename", None)
+        checkpoint_dir = getattr(config, "checkpoint_dir", None)
+        checkpoint_path = None
+        if checkpoint_filename and checkpoint_dir:
+            checkpoint_path = os.path.join(checkpoint_dir, checkpoint_filename)
+        return checkpoint_path
 
 
 def main(args):
@@ -223,7 +239,9 @@ def arg_parser():
     parser.add_argument("--entity", default="mvrcii_", type=str)
 
     # === Paths ===
+    parser.add_argument("--checkpoint_filename", type=str)
     parser.add_argument("--checkpoint_dir", default="checkpoints", type=str)
+
     parser.add_argument("--dataset_path", default="../data/", type=str)
     parser.add_argument("--dataset_csv_path", default="../endoscopy/data_alpha", type=str)
     parser.add_argument("--class_mapping_filename", default="class_mapping.json", type=str)
