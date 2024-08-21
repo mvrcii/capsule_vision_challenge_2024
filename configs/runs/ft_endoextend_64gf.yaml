@@ -8,6 +8,8 @@ val_bs: 64
 num_workers: 12
 dataset_path: "../data/"
 dataset_csv_path: "dataset"
+
+verbose: true
 wandb_project: "CV2024"
 entity: "wuesuv"
 
