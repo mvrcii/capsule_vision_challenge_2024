@@ -43,6 +43,8 @@ class AbstractLightningModule(LightningModule, ABC):
         self.predict_preds = []
 
         self.backbone = self.init_backbone()
+        if checkpoint_path:
+            self.load_backbone_weights()
         self.classifier = self.init_classifier()
 
         self.criterion = nn.CrossEntropyLoss()
@@ -51,9 +53,6 @@ class AbstractLightningModule(LightningModule, ABC):
         self.__setup_metrics()
 
         self.best_val_AUC_macro = float('-inf')
-
-        if checkpoint_path:
-            self.load_backbone_weights()
 
     @abstractmethod
     def init_backbone(self):
@@ -155,20 +154,7 @@ class AbstractLightningModule(LightningModule, ABC):
         self.__log_conf_matrix(all_labels=self.test_labels, all_preds=self.test_preds, mode='test')
 
     def __setup_model_fine_tuning(self):
-        def support_deprecated(config):
-            ft_head = getattr(config, 'ft_head', False)
-            ft_backbone = getattr(config, 'ft_backbone', False)
-            if ft_head and ft_backbone:
-                return FineTuneMode.FULL
-            elif ft_head and not ft_backbone:
-                return FineTuneMode.HEAD
-            elif not ft_head and ft_backbone:
-                return FineTuneMode.BACKBONE
-            else:
-                return None
-
-        ft_mode_dep = support_deprecated(self.config)
-        ft_mode = ft_mode_dep if ft_mode_dep else self.config.ft_mode
+        ft_mode = self.config.ft_mode
 
         for param in self.classifier.parameters():
             param.requires_grad = False
@@ -176,10 +162,12 @@ class AbstractLightningModule(LightningModule, ABC):
             param.requires_grad = False
 
         if ft_mode == FineTuneMode.HEAD.value or ft_mode == FineTuneMode.FULL.value:
+            logging.info("Unfreezing head parameters for fine-tuning.")
             for param in self.classifier.parameters():
                 param.requires_grad = True
 
         if ft_mode == FineTuneMode.BACKBONE.value or ft_mode == FineTuneMode.FULL.value:
+            logging.info("Unfreezing backbone parameters for fine-tuning.")
             for param in self.backbone.parameters():
                 param.requires_grad = True
 
