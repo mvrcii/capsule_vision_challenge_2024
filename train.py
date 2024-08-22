@@ -197,11 +197,20 @@ class TrainHandler:
 
 def main(args):
     config_args = {}
+    local_conf_path = "configs/local.yaml"
 
+    # Read arguments from passed config
     if args.config:
         with open(args.config, 'r') as f:
             config_args = yaml.safe_load(f)
             for key, value in config_args.items():
+                setattr(args, key, value)
+
+    # Overwrite arguments from local config
+    if os.path.exists(local_conf_path):
+        with open(local_conf_path, 'r') as f:
+            local_config_args = yaml.safe_load(f)
+            for key, value in local_config_args.items():
                 setattr(args, key, value)
 
     # Ensure argparse arguments override config file arguments if provided
