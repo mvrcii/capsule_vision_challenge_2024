@@ -2,6 +2,7 @@
 data
 capsulevision
 *.ipynb_checkpoints
+configs/local.yaml
 
 
 /wandb/
