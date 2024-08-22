@@ -1,4 +1,3 @@
-add local conf
 rework loading / finetuning of head / backbone etc
 rename fold id to validation fold id
 class balancing / capping via arg param / config (currently deactivated)
