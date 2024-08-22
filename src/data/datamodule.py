@@ -11,12 +11,14 @@ from src.data.dataset import ImageDataset
 
 class DataModule(LightningDataModule):
     def __init__(self, class_mapping, transforms, train_bs, val_bs, dataset_path, dataset_csv_path, fold_idx=0,
-                 num_workers=8):
+                 num_workers=8, train_frac=1, val_frac=1):
         super().__init__()
         self.train_bs, self.val_bs = train_bs, val_bs
         self.dataset_path = dataset_path
         self.dataset_csv_path = dataset_csv_path
         self.fold_idx = fold_idx
+        self.train_frac = train_frac
+        self.val_frac = val_frac
         self.num_workers = num_workers
         self.train_transform, self.val_transform = transforms
 
@@ -77,6 +79,11 @@ class DataModule(LightningDataModule):
 
         X_train = X_train_val[X_train_val['fold'] != self.fold_idx]
         X_val = X_train_val[X_train_val['fold'] == self.fold_idx]
+
+        if self.train_frac != 1:
+            X_train = X_train.sample(frac=self.train_frac)
+        if self.val_frac != 1:
+            X_val = X_val.sample(frac=self.val_frac)
 
         # Apply class balancing
         # X_train = self.__balance_classes(X_train)

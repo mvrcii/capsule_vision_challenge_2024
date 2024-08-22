@@ -148,6 +148,8 @@ class TrainHandler:
             dataset_csv_path=args.dataset_csv_path,
             fold_idx=args.fold_id,
             num_workers=args.num_workers,
+            train_frac=args.train_frac if args.train_frac else 1,
+            val_frac=args.val_frac if args.val_frac else 1
         )
 
     @staticmethod
