@@ -34,9 +34,11 @@ class DataModule(LightningDataModule):
 
     def __load_test_data(self):
         test_path = os.path.join(self.dataset_csv_path, 'test.csv')
-        X_test = pd.read_csv(test_path)
-        X_test = self.vectorized_path_update(X_test)
-        return X_test
+        if os.path.exists(test_path):
+            X_test = pd.read_csv(test_path)
+            X_test = self.vectorized_path_update(X_test)
+            return X_test
+        return None
 
     @staticmethod
     def __balance_classes(df, random_state=42):
@@ -57,13 +59,10 @@ class DataModule(LightningDataModule):
         balanced_df = balanced_df.sample(frac=1, random_state=random_state).reset_index(drop=True)
         return balanced_df
 
-    def __load_data(self, test_set=False):
+    def __load_data(self):
         train_val_path = os.path.join(self.dataset_csv_path, 'train_val.csv')
 
-        if test_set:
-            X_test = self.__load_test_data()
-        else:
-            X_test = None
+        X_test = self.__load_test_data()
 
         X_train_val = pd.read_csv(train_val_path)
 
@@ -103,7 +102,6 @@ class DataModule(LightningDataModule):
             'train': ImageDataset(X_train, self.class_to_index, self.train_transform),
             'val': ImageDataset(X_val, self.class_to_index, self.val_transform),
         }
-
         if X_test is not None:
             self.datasets['test'] = ImageDataset(X_test, self.class_to_index, self.val_transform)
         self.calculate_inverse_weights(X_train)
