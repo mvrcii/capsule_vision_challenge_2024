@@ -9,6 +9,8 @@ import wandb
 from adabelief_pytorch import AdaBelief
 from lightning import LightningModule
 from matplotlib.colors import TwoSlopeNorm
+from sklearn.metrics import auc, roc_curve
+from sklearn.preprocessing import label_binarize
 from torch import nn
 from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR
 from torchmetrics.classification import MulticlassPrecision, MulticlassRecall, MulticlassF1Score, \
@@ -143,15 +145,28 @@ class AbstractLightningModule(LightningModule, ABC):
         current_val_metric = self.trainer.logged_metrics.get('val_AUC_macro')
         if current_val_metric > self.best_val_AUC_macro:
             self.best_val_AUC_macro = current_val_metric
-            self.__log_conf_matrix(all_labels=self.val_labels, all_preds=self.val_preds, mode='val')
-            self.__log_roc_curve(mode='val')
+
+            labels = np.array(getattr(self, f"val_labels"))
+            preds = np.array(getattr(self, f"val_preds"))
+
+            self.__log_conf_matrix(preds=preds, labels=labels, mode='val')
+            self.__log_roc_curve(preds=preds, labels=labels, mode='val')
+        return np.array(getattr(self, f"val_labels")), np.array(getattr(self, f"val_preds"))
+
+    def on_validation_epoch_start(self) -> None:
+        self.val_labels.clear()
+        self.val_preds.clear()
+
+    def on_test_epoch_start(self) -> None:
+        self.test_labels.clear()
+        self.test_preds.clear()
 
     def on_test_epoch_end(self):
         if self.trainer.sanity_checking:
             return
 
         self.__log_epoch_metrics(all_labels=self.test_labels, all_preds=self.test_preds, mode='test')
-        self.__log_conf_matrix(all_labels=self.test_labels, all_preds=self.test_preds, mode='test')
+        self.__log_conf_matrix(preds=self.test_preds, labels=self.test_labels, mode='test')
 
     def __setup_model_fine_tuning(self):
         ft_mode = self.config.ft_mode
@@ -239,7 +254,7 @@ class AbstractLightningModule(LightningModule, ABC):
             class_label = self.class_names[i]
             self.log(f"{mode}_AUC_{class_label}", score.item(), on_step=False, on_epoch=True, prog_bar=False)
 
-    def create_multiclass_conf_matrix(self, labels, preds, val_AUC_macro=None, epoch=None):
+    def __log_conf_matrix(self, preds, labels, mode='val'):
         sns.set_style("white")
         sns.set_style("ticks")
 
@@ -282,8 +297,8 @@ class AbstractLightningModule(LightningModule, ABC):
         # Annotate the cells with integer counts
         ax.set_xlabel('Predicted Label', fontsize=14, weight='bold')
         ax.set_ylabel('True Label', fontsize=14, weight='bold')
-        current_epoch = epoch if epoch else self.trainer.current_epoch
-        val_AUC_macro = (val_AUC_macro if val_AUC_macro else self.best_val_AUC_macro) * 100
+        current_epoch = self.trainer.current_epoch
+        val_AUC_macro = self.best_val_AUC_macro * 100
         ax.set_title(f'Confusion Matrix (Epoch={current_epoch}; val_AUC_macro={val_AUC_macro:.2f})', fontsize=18,
                      weight='bold',
                      pad=15)
@@ -293,26 +308,65 @@ class AbstractLightningModule(LightningModule, ABC):
                 f"Val AUC increased: Logging Confusion Matrix (Epoch={current_epoch}; val_AUC_macro={val_AUC_macro:.2f})")
         plt.tight_layout()
 
-        return fig
-
-    def __log_conf_matrix(self, all_labels, all_preds, mode='val'):
-        fig = self.create_multiclass_conf_matrix(all_labels, all_preds)
-
         wandb.log({f"best_{mode}_conf_mat": wandb.Image(fig)})
         plt.close()
 
-        # Clear values
-        if mode == 'val':
-            self.val_labels.clear()
-            self.val_preds.clear()
-        if mode == 'test':
-            self.test_labels.clear()
-            self.test_preds.clear()
+    def __log_roc_curve(self, preds, labels, mode='val'):
+        # print("Creating ROC curve plot")
+        sns.set(style="whitegrid", context="poster", palette="bright")
+        sns.set_style('ticks')
 
-    def __log_roc_curve(self, mode='val'):
-        fig, ax = plt.subplots(figsize=(12, 8))
-        self.AUC_weighted.plot(ax=ax)
-        plt.title(f"{mode.capitalize()} ROC Curve", fontsize=18)
+        class_labels = self.class_names
+        num_classes = self.num_classes
+
+        if labels.ndim == 1 or labels.shape[1] == 1:
+            micro_labels = label_binarize(labels, classes=np.arange(num_classes)).ravel()
+        else:
+            micro_labels = labels.ravel()
+
+        micro_preds = preds.ravel()
+
+        mean_fpr = np.linspace(0, 1, 100)
+        tprs = []
+        aucs = []
+
+        # Create a subplot figure with 1 row and 2 columns
+        fig, axes = plt.subplots(1, 2, figsize=(28, 10))
+        fig.subplots_adjust(hspace=0.4, wspace=0.4, bottom=0.15)
+
+        ax1 = axes[0]
+        for i in range(num_classes):
+            binary_labels = (labels == i)
+            fpr, tpr, _ = roc_curve(binary_labels, preds[:, i])
+            auc_score = auc(fpr, tpr)
+            aucs.append(auc_score)
+            interp_tpr = np.interp(mean_fpr, fpr, tpr)
+            tprs.append(interp_tpr)
+            sns.lineplot(x=fpr, y=tpr, ax=ax1, label=f'{class_labels[i]} (AUC = {auc_score:.2f})')
+
+        sns.lineplot(x=[0, 1], y=[0, 1], ax=ax1, color="gray", linestyle='--', label='Random Classifier')
+        ax1.set_title('ROC Curves for Each Class')
+        ax1.set_xlabel('False Positive Rate (Specificity)')
+        ax1.set_ylabel('True Positive Rate (Sensitivity)')
+        ax1.legend(loc='lower right', fontsize='small', title_fontsize='medium')
+
+        # Calculate and plot the micro-average ROC curve
+        micro_fpr, micro_tpr, _ = roc_curve(micro_labels, micro_preds)
+        micro_auc = auc(micro_fpr, micro_tpr)
+        sns.lineplot(x=micro_fpr, y=micro_tpr, ax=axes[1], color='blue',
+                     label=f'Micro-average ROC (AUC = {micro_auc:.2f})')
+
+        # Macro-average ROC curve
+        mean_tpr = np.mean(tprs, axis=0)
+        mean_auc = auc(mean_fpr, mean_tpr)
+        mean_tpr[0] = 0.0
+        sns.lineplot(x=mean_fpr, y=mean_tpr, ax=axes[1], color='red', label=f'Macro-average ROC (AUC = {mean_auc:.2f})')
+
+        sns.lineplot(x=[0, 1], y=[0, 1], ax=axes[1], color="gray", linestyle='--', label='Random Classifier')
+        axes[1].set_title('Macro and Micro-average ROC Curves')
+        axes[1].set_xlabel('False Positive Rate (Specificity)')
+        axes[1].set_ylabel('True Positive Rate (Sensitivity)')
+        axes[1].legend(loc='lower right', fontsize='small', title_fontsize='medium')
         plt.tight_layout()
-        wandb.log({f"{mode}_roc_curve": wandb.Image(fig)})
+        wandb.log({f"best_{mode}_roc_curve": wandb.Image(fig)})
         plt.close()
