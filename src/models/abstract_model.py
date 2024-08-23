@@ -72,7 +72,7 @@ class AbstractLightningModule(LightningModule, ABC):
     def load_checkpoint_weights(self):
         logging.info(f"Loading weights from checkpoint: {self.checkpoint_path}")
 
-        checkpoint = torch.load(self.checkpoint_path)
+        checkpoint = torch.load(self.checkpoint_path, weights_only=True)
         state_dict = checkpoint['state_dict']
 
         backbone_state_dict = {k.replace('backbone.', ''): v for k, v in state_dict.items() if 'backbone.' in k}
