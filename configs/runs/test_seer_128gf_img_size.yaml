@@ -1,4 +1,0 @@
-fold_id: 3
-img_size: 224
-eta_min: 0.005
-model_arch: regnety_1280.seer
