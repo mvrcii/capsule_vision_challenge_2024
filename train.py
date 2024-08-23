@@ -268,6 +268,9 @@ def arg_parser():
     # === Training Modes ===
     parser.add_argument("--ft_mode", type=str, choices=[mode.value for mode in FineTuneMode], default='head',
                         help="Fine-tune mode: 'head' only the head, 'backbone' only the backbone, or 'full' both head and backbone.")
+    parser.add_argument("--train_frac", type=float, default=1, help="Fraction of training data to use")
+    parser.add_argument("--val_frac", type=float, default=1, help="Fraction of validation data to use")
+
     # === Model ===
     parser.add_argument("--model_arch", default="regnety_640.seer", type=str)
     parser.add_argument("--model_type", default="seer", type=str)
