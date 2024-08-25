@@ -8,7 +8,6 @@ from typing import Tuple
 import albumentations as A
 import torch
 import yaml
-from albumentations.pytorch import ToTensorV2
 from lightning import Trainer, seed_everything
 from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
 from lightning.pytorch.loggers import WandbLogger
@@ -19,6 +18,7 @@ from src.models.enums.finetune_mode import FineTuneMode
 from src.models.regnety.regnety import RegNetY
 from src.models.vit.vit import ViT
 from src.utils.class_mapping import load_class_mapping
+from src.utils.transform_utils import load_transforms
 
 warnings.filterwarnings("ignore", category=UserWarning, module='pydantic')
 
@@ -82,28 +82,13 @@ class TrainHandler:
 
     @staticmethod
     def __prepare_transforms(args) -> Tuple[A.Compose, A.Compose]:
-        if args.img_size:
-            img_size = args.img_size
-            logging.info(f"Using provided image size: {img_size}")
-        else:
-            img_size = 384
-            logging.info(f"Using default image size: {img_size}")
+        img_size = args.img_size
+        logging.info(f"Using provided image size: {img_size}")
 
-        train_transforms = A.Compose([
-            A.RandomResizedCrop(height=img_size, width=img_size, scale=(0.08, 1.0), ratio=(0.75, 1.3333),
-                                interpolation=2),
-            A.HorizontalFlip(p=0.5),
-            A.VerticalFlip(p=0.5),
-            A.ColorJitter(p=0.5, brightness=(0.6, 1.4), contrast=(0.6, 1.4), saturation=(0.6, 1.4)),
-            A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ToTensorV2()
-        ])
-        val_transforms = A.Compose([
-            A.Resize(height=img_size, width=img_size, interpolation=2),
-            A.CenterCrop(height=img_size, width=img_size, always_apply=True),
-            A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ToTensorV2(always_apply=True)
-        ])
+        train_transforms, val_transforms = load_transforms(img_size=img_size, transform_path=args.transform_path)
+
+        with open(args.transform_path, 'r') as f:
+            wandb.log({'transforms': f.read()})
 
         return train_transforms, val_transforms
 
