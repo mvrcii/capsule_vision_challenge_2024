@@ -9,7 +9,7 @@ import albumentations as A
 import torch
 import yaml
 from lightning import Trainer, seed_everything
-from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
+from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor, ModelSummary
 from lightning.pytorch.loggers import WandbLogger
 
 import wandb
@@ -75,7 +75,8 @@ class TrainHandler:
 
         callbacks = [
             checkpoint_callback,
-            LearningRateMonitor("epoch"),
+            ModelSummary(max_depth=0),
+            LearningRateMonitor(logging_interval="epoch"),
         ]
 
         return wandb_logger, callbacks
@@ -133,8 +134,8 @@ class TrainHandler:
             dataset_csv_path=args.dataset_csv_path,
             fold_idx=args.fold_id,
             num_workers=args.num_workers,
-            train_frac=args.train_frac if args.train_frac else 1,
-            val_frac=args.val_frac if args.val_frac else 1
+            train_frac=args.train_frac,
+            val_frac=args.val_frac
         )
 
     @staticmethod
@@ -145,15 +146,20 @@ class TrainHandler:
     def __prepare_trainer(self, args) -> Trainer:
         accelerator = "mps" if torch.backends.mps.is_available() else (
             "gpu" if torch.cuda.is_available() else "cpu")
+        ddp_training = args.num_devices > 1 or args.num_nodes > 1
+        devices = "auto" if args.num_devices == 1 else args.num_devices
+        strategy = "ddp" if ddp_training else "auto"
         return Trainer(
             logger=self.wandb_logger,
-            devices=1,
             accelerator=accelerator,
+            devices=devices,
+            num_nodes=args.num_nodes,
             max_epochs=args.max_epochs,
             callbacks=self.callbacks,
             precision="16-mixed",
             gradient_clip_val=0.5,
-            enable_model_summary=True
+            enable_model_summary=False,
+            strategy=strategy
         )
 
     def __prepare_model(self, config):
@@ -173,7 +179,7 @@ class TrainHandler:
     @staticmethod
     def __get_checkpoint_path(config):
         checkpoint_filename = getattr(config, "checkpoint_filename", None)
-        checkpoint_dir = getattr(config, "checkpoint_dir", None)
+        checkpoint_dir = getattr(config, "pretrained_checkpoint_dir", None)
         checkpoint_path = None
         if checkpoint_filename and checkpoint_dir:
             checkpoint_path = os.path.join(checkpoint_dir, checkpoint_filename)
@@ -244,11 +250,15 @@ def arg_parser():
 
     # === Paths ===
     parser.add_argument("--checkpoint_filename", type=str)
-    parser.add_argument("--checkpoint_dir", default="checkpoints", type=str)
+    parser.add_argument("--checkpoint_dir", default="checkpoints", type=str,
+                        help="Directory to save checkpoints and logs")
+    parser.add_argument("--pretrained_checkpoint_dir", type=str,
+                        help="Directory to load pretrained checkpoints from")
 
     parser.add_argument("--dataset_path", default="../data/", type=str)
     parser.add_argument("--dataset_csv_path", default="../endoscopy/data_alpha", type=str)
     parser.add_argument("--class_mapping_filename", default="class_mapping.json", type=str)
+    parser.add_argument("--transform_path", default="configs/transforms/base_transforms.py", type=str)
 
     # === Training ===
     parser.add_argument("--seed", default=42, type=int)
@@ -257,6 +267,9 @@ def arg_parser():
     parser.add_argument("--train_bs", default=64, type=int)
     parser.add_argument("--val_bs", default=64, type=int)
     parser.add_argument("--num_workers", default=16, type=int)
+
+    parser.add_argument("--num_nodes", default=1, type=int)
+    parser.add_argument("--num_devices", default=1, type=int)
 
     # === Training Modes ===
     parser.add_argument("--ft_mode", type=str, choices=[mode.value for mode in FineTuneMode], default='head',
@@ -277,6 +290,7 @@ def arg_parser():
     # === Scheduler ===
     parser.add_argument("--scheduler", default="cosine", type=str)
     parser.add_argument("--eta_min", type=float, default=0, help="Minimum learning rate for the scheduler")
+    parser.add_argument("--lambda_factor", type=float, default=0.95, help="Lambda for the scheduler")
 
     return parser
 

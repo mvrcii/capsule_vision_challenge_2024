@@ -12,7 +12,7 @@ from matplotlib.colors import TwoSlopeNorm
 from sklearn.metrics import auc, roc_curve
 from sklearn.preprocessing import label_binarize
 from torch import nn
-from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR
+from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR, LambdaLR
 from torchmetrics.classification import MulticlassPrecision, MulticlassRecall, MulticlassF1Score, \
     MulticlassAveragePrecision, MulticlassAUROC, MulticlassConfusionMatrix
 
@@ -23,6 +23,7 @@ from src.models.linear_classifier import LinearClassifier
 class AbstractLightningModule(LightningModule, ABC):
     def __init__(self, config, class_to_idx, checkpoint_path=None):
         super().__init__()
+        self.example_input_array = torch.zeros(1, 3, 224, 224)
         self.config = config
         self.model_arch = config.model_arch
         self.model_type = config.model_type
@@ -32,6 +33,7 @@ class AbstractLightningModule(LightningModule, ABC):
         self.checkpoint_path = checkpoint_path
         self.verbose = config.verbose
 
+        self.class_mapping = class_to_idx
         self.class_names = list(class_to_idx.keys())
         self.num_classes = len(self.class_names)
 
@@ -81,50 +83,60 @@ class AbstractLightningModule(LightningModule, ABC):
         classifier_state_dict = {k.replace('classifier.', ''): v for k, v in state_dict.items() if 'classifier.' in k}
         self.classifier.load_state_dict(classifier_state_dict, strict=False)
 
-    def configure_optimizers(self):
-        trainable_params = list(filter(lambda p: p.requires_grad, self.backbone.parameters())) + \
-                           list(filter(lambda p: p.requires_grad, self.classifier.parameters()))
+    def get_trainable_params(self):
+        """Aggregate trainable parameters from different parts of the model."""
+        return list(filter(lambda p: p.requires_grad, self.backbone.parameters())) + \
+            list(filter(lambda p: p.requires_grad, self.classifier.parameters()))
+
+    def create_optimizer(self, trainable_params):
+        """Create and return the optimizer based on configuration."""
         if self.config.optimizer == 'adabelief':
-            optimizer = AdaBelief(trainable_params, lr=self.lr, eps=1e-16, betas=(0.9, 0.999), weight_decouple=True,
-                                  rectify=False, weight_decay=self.weight_decay, print_change_log=False)
+            return AdaBelief(trainable_params, lr=self.lr, eps=1e-16, betas=(0.9, 0.999),
+                             weight_decouple=True, rectify=False, weight_decay=self.weight_decay,
+                             print_change_log=False)
         elif self.config.optimizer == 'adamw':
-            optimizer = torch.optim.Adam(trainable_params, lr=self.lr, weight_decay=self.weight_decay)
+            return torch.optim.Adam(trainable_params, lr=self.lr, weight_decay=self.weight_decay)
         else:
             raise ValueError(f"Invalid optimizer: {self.config.optimizer}")
 
+    def create_scheduler(self, optimizer):
+        """Create and return the scheduler based on configuration."""
         if self.config.scheduler == 'cosine':
-            scheduler = CosineAnnealingLR(optimizer, T_max=self.trainer.max_epochs, eta_min=self.config.eta_min)
+            return CosineAnnealingLR(optimizer, T_max=self.trainer.max_epochs, eta_min=self.config.eta_min)
         elif self.config.scheduler == 'linear':
             end_factor = self.config.eta_min / self.config.lr
-            scheduler = LinearLR(optimizer, start_factor=1., end_factor=end_factor, total_iters=self.trainer.max_epochs)
+            return LinearLR(optimizer, start_factor=1., end_factor=end_factor, total_iters=self.trainer.max_epochs)
+        elif self.config.scheduler == 'lambda':
+            return LambdaLR(optimizer, lr_lambda=lambda epoch: self.config.lambda_factor ** (epoch / 2))
         else:
             raise ValueError(f"Invalid scheduler: {self.config.scheduler}")
 
-        return {"optimizer": optimizer, "lr_scheduler": {"scheduler": scheduler, "monitor": "val_AUC_macro"}}
+    def configure_optimizers(self):
+        trainable_params = self.get_trainable_params()
+        optimizer = self.create_optimizer(trainable_params)
+
+        if self.config.scheduler == 'constant':
+            return {"optimizer": optimizer}
+
+        scheduler = self.create_scheduler(optimizer)
+        return {"optimizer": optimizer, "lr_scheduler": {"scheduler": scheduler, "monitor": self.metric}}
 
     def forward(self, x):
-        """
-        Forward pass of the model. Takes an input tensor and returns the output logits and predictions.
-        :param x: Input tensor
-        :return:  Tuple of logits and predictions
-        """
         features = self.backbone(x)
         logits = self.classifier(features)
-
         return logits
 
     def training_step(self, batch, batch_idx):
         imgs, labels = batch
         labels = labels.long()
         logits = self.forward(imgs)
-
-        return self.__calc_loss(logits, labels, mode='train')
+        return self.__calc_loss(logits=logits, labels=labels, mode='train')
 
     def validation_step(self, batch, batch_idx):
         imgs, labels = batch
         labels = labels.long()
         logits = self.forward(imgs)
-        self.__calc_loss(logits, labels, mode='val')
+        self.__calc_loss(logits=logits, labels=labels, mode='val')
         self.__log_step_metrics(preds=logits, labels=labels, mode='val')
         self.__store_step_preds(preds=logits, labels=labels, mode='val')
 
@@ -132,7 +144,7 @@ class AbstractLightningModule(LightningModule, ABC):
         imgs, labels = batch
         labels = labels.long()
         logits = self.forward(imgs)
-        self.__calc_loss(logits, labels, mode='test')
+        self.__calc_loss(logits=logits, labels=labels, mode='test')
         self.__log_step_metrics(preds=logits, labels=labels, mode='test')
         self.__store_step_preds(preds=logits, labels=labels, mode='test')
 
@@ -140,33 +152,36 @@ class AbstractLightningModule(LightningModule, ABC):
         if self.trainer.sanity_checking:
             return
 
-        self.__log_epoch_metrics(all_labels=self.val_labels, all_preds=self.val_preds, mode='val')
+        if self.trainer.lr_scheduler_configs:
+            lr = self.trainer.lr_scheduler_configs[0].scheduler.get_last_lr()[0]
+        else:
+            lr = self.trainer.optimizers[0].param_groups[0]['lr']
+        self.log('learning_rate', lr, on_step=False, on_epoch=True, prog_bar=False)
+
+        self.__log_epoch_metrics(mode='val')
 
         current_val_metric = self.trainer.logged_metrics.get('val_AUC_macro')
         if current_val_metric > self.best_val_AUC_macro:
             self.best_val_AUC_macro = current_val_metric
-
-            labels = np.array(getattr(self, f"val_labels"))
-            preds = np.array(getattr(self, f"val_preds"))
-
-            self.__log_conf_matrix(preds=preds, labels=labels, mode='val')
-            self.__log_roc_curve(preds=preds, labels=labels, mode='val')
-        return np.array(getattr(self, f"val_labels")), np.array(getattr(self, f"val_preds"))
-
-    def on_validation_epoch_start(self) -> None:
-        self.val_labels.clear()
-        self.val_preds.clear()
-
-    def on_test_epoch_start(self) -> None:
-        self.test_labels.clear()
-        self.test_preds.clear()
+            self.__log_conf_matrix(mode='val')
+            self.__log_roc_curve(mode='val')
+        self.__clear_labels_and_preds(mode='val')
 
     def on_test_epoch_end(self):
         if self.trainer.sanity_checking:
             return
 
-        self.__log_epoch_metrics(all_labels=self.test_labels, all_preds=self.test_preds, mode='test')
-        self.__log_conf_matrix(preds=self.test_preds, labels=self.test_labels, mode='test')
+        self.__log_epoch_metrics(mode='test')
+        self.__log_conf_matrix(mode='test')
+        self.__clear_labels_and_preds(mode='test')
+
+    def __clear_labels_and_preds(self, mode):
+        if mode == 'val':
+            self.val_labels.clear()
+            self.val_preds.clear()
+        if mode == 'test':
+            self.test_labels.clear()
+            self.test_preds.clear()
 
     def __setup_model_fine_tuning(self):
         ft_mode = self.config.ft_mode
@@ -231,9 +246,12 @@ class AbstractLightningModule(LightningModule, ABC):
             getattr(self, f"{mode}_labels").extend(labels.detach().cpu().tolist())
             getattr(self, f"{mode}_preds").extend(preds.detach().cpu().tolist())
 
-    def __log_epoch_metrics(self, all_labels, all_preds, mode='val'):
-        labels = torch.tensor(all_labels, dtype=torch.int8)
-        preds = torch.tensor(all_preds, dtype=torch.float16)
+    def __log_epoch_metrics(self,  mode='val'):
+        labels = getattr(self, f"{mode}_labels")
+        preds = getattr(self, f"{mode}_preds")
+
+        labels = torch.tensor(labels, dtype=torch.int8)
+        preds = torch.tensor(preds, dtype=torch.float16)
 
         # Log weighted and macro metrics that are computed over the epoch
         self.log(f"{mode}_mAP_weighted", self.mAP_weighted(preds, labels), on_step=False, on_epoch=True, prog_bar=True)
@@ -254,7 +272,10 @@ class AbstractLightningModule(LightningModule, ABC):
             class_label = self.class_names[i]
             self.log(f"{mode}_AUC_{class_label}", score.item(), on_step=False, on_epoch=True, prog_bar=False)
 
-    def __log_conf_matrix(self, preds, labels, mode='val'):
+    def __log_conf_matrix(self, mode='val'):
+        labels = getattr(self, f"{mode}_labels")
+        preds = getattr(self, f"{mode}_preds")
+
         sns.set_style("white")
         sns.set_style("ticks")
 
@@ -311,10 +332,12 @@ class AbstractLightningModule(LightningModule, ABC):
         wandb.log({f"best_{mode}_conf_mat": wandb.Image(fig)})
         plt.close()
 
-    def __log_roc_curve(self, preds, labels, mode='val'):
-        # print("Creating ROC curve plot")
+    def __log_roc_curve(self, mode='val'):
         sns.set(style="whitegrid", context="poster", palette="bright")
         sns.set_style('ticks')
+
+        labels = np.array(getattr(self, f"{mode}_labels"))
+        preds = np.array(getattr(self, f"{mode}_preds"))
 
         class_labels = self.class_names
         num_classes = self.num_classes
