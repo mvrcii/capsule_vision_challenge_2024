@@ -25,6 +25,7 @@ class AbstractLightningModule(LightningModule, ABC):
         super().__init__()
         self.example_input_array = torch.zeros(1, 3, 224, 224)
         self.config = config
+        self.metric = config.metric
         self.model_arch = config.model_arch
         self.model_type = config.model_type
         self.lr = float(config.lr)
@@ -57,7 +58,7 @@ class AbstractLightningModule(LightningModule, ABC):
         self.__setup_model_fine_tuning()
         self.__setup_metrics()
 
-        self.best_val_AUC_macro = float('-inf')
+        self.best_metric = float('-inf')
 
     @abstractmethod
     def init_backbone(self):
@@ -160,9 +161,9 @@ class AbstractLightningModule(LightningModule, ABC):
 
         self.__log_epoch_metrics(mode='val')
 
-        current_val_metric = self.trainer.logged_metrics.get('val_AUC_macro')
-        if current_val_metric > self.best_val_AUC_macro:
-            self.best_val_AUC_macro = current_val_metric
+        current_val_metric = self.trainer.logged_metrics.get(str(self.metric))
+        if current_val_metric > self.best_metric:
+            self.best_metric = current_val_metric
             self.__log_conf_matrix(mode='val')
             self.__log_roc_curve(mode='val')
         self.__clear_labels_and_preds(mode='val')
@@ -246,7 +247,7 @@ class AbstractLightningModule(LightningModule, ABC):
             getattr(self, f"{mode}_labels").extend(labels.detach().cpu().tolist())
             getattr(self, f"{mode}_preds").extend(preds.detach().cpu().tolist())
 
-    def __log_epoch_metrics(self,  mode='val'):
+    def __log_epoch_metrics(self, mode='val'):
         labels = getattr(self, f"{mode}_labels")
         preds = getattr(self, f"{mode}_preds")
 
@@ -318,15 +319,15 @@ class AbstractLightningModule(LightningModule, ABC):
         # Annotate the cells with integer counts
         ax.set_xlabel('Predicted Label', fontsize=14, weight='bold')
         ax.set_ylabel('True Label', fontsize=14, weight='bold')
-        current_epoch = self.trainer.current_epoch
-        val_AUC_macro = self.best_val_AUC_macro * 100
-        ax.set_title(f'Confusion Matrix (Epoch={current_epoch}; val_AUC_macro={val_AUC_macro:.2f})', fontsize=18,
-                     weight='bold',
-                     pad=15)
+        conf_mat_str = f"Confusion Matrix (Epoch={self.trainer.current_epoch}; {self.metric}={self.best_metric * 100:.2f})"
+        ax.set_title(
+            conf_mat_str,
+            fontsize=18,
+            weight='bold',
+            pad=15
+        )
 
-        if self.verbose:
-            logging.info(
-                f"Val AUC increased: Logging Confusion Matrix (Epoch={current_epoch}; val_AUC_macro={val_AUC_macro:.2f})")
+        if self.verbose: logging.info(f"{self.metric} increased: Logging {conf_mat_str}")
         plt.tight_layout()
 
         wandb.log({f"best_{mode}_conf_mat": wandb.Image(fig)})

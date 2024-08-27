@@ -2,4 +2,5 @@
 wandb_project: "CV2024"
 entity: "wuesuv"
 dataset_csv_path: "dataset"
-checkpoint_dir: "pretrained_models"
+checkpoint_dir: "checkpoints"
+pretrained_checkpoint_dir: "pretrained_models"

@@ -43,6 +43,7 @@ class TrainHandler:
     def __preparations(config):
         seed_everything(config.seed)
         sweep_id = wandb.run.sweep_id
+        metric = config.metric
 
         wandb_logger = WandbLogger(experiment=wandb.run)
 
@@ -54,13 +55,13 @@ class TrainHandler:
             directory_name = f"sweep-{sweep_id}"
             checkpoint_dir = os.path.join(config.checkpoint_dir, directory_name)
             os.makedirs(checkpoint_dir, exist_ok=True)
-            filename = f"{run_name}_epoch{{epoch:02d}}_val_AUC_macro{{val_AUC_macro:.2f}}"
+            filename = f"{run_name}_epoch{{epoch:02d}}_{metric}{{{metric}:.2f}}"
         else:
             # FORMAT: <checkpoint_dir>/run-<timestamp>-<run_name>/
             directory_name = f"run-{timestamp}-{run_name}"
             checkpoint_dir = os.path.join(config.checkpoint_dir, directory_name)
             os.makedirs(checkpoint_dir, exist_ok=True)
-            filename = f"best_epoch{{epoch:02d}}_val_AUC_macro{{val_AUC_macro:.2f}}"
+            filename = f"best_epoch{{epoch:02d}}_{metric}{{{metric}:.2f}}"
 
         checkpoint_callback = ModelCheckpoint(
             dirpath=checkpoint_dir,
@@ -68,7 +69,7 @@ class TrainHandler:
             save_top_k=1,
             save_weights_only=False,
             mode='max',
-            monitor="val_AUC_macro",
+            monitor=metric,
             verbose=config.verbose,
             auto_insert_metric_name=False
         )
@@ -274,6 +275,8 @@ def arg_parser():
     # === Training Modes ===
     parser.add_argument("--ft_mode", type=str, choices=[mode.value for mode in FineTuneMode], default='head',
                         help="Fine-tune mode: 'head' only the head, 'backbone' only the backbone, or 'full' both head and backbone.")
+    parser.add_argument("--metric", type=str, choices=['val_mAP_weighted', 'val_AUC_macro', 'val_f1_weighted'],
+                        default='val_f1_weighted', help="Metric to optimize for during training.")
     parser.add_argument("--train_frac", type=float, default=1, help="Fraction of training data to use")
     parser.add_argument("--val_frac", type=float, default=1, help="Fraction of validation data to use")
 
