@@ -276,7 +276,7 @@ def arg_parser():
     parser.add_argument("--ft_mode", type=str, choices=[mode.value for mode in FineTuneMode], default='head',
                         help="Fine-tune mode: 'head' only the head, 'backbone' only the backbone, or 'full' both head and backbone.")
     parser.add_argument("--metric", type=str, choices=['val_mAP_weighted', 'val_AUC_macro', 'val_f1_weighted'],
-                        default='val_f1_weighted', help="Metric to optimize for during training.")
+                        default='val_AUC_macro', help="Metric to optimize for during training.")
     parser.add_argument("--train_frac", type=float, default=1, help="Fraction of training data to use")
     parser.add_argument("--val_frac", type=float, default=1, help="Fraction of validation data to use")
 
