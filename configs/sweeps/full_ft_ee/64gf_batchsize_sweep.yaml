@@ -42,7 +42,7 @@ parameters:
 
   # === Scheduler ===
   scheduler:
-    values: [ 'lambda' ]
+    values: [ 'cosine' ]
   lambda_factor:
     values: [ 0.95 ]
 
