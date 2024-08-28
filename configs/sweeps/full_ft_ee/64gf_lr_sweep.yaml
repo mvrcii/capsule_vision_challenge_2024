@@ -1,4 +1,5 @@
 program: train.py
+entity: "wuesuv"
 project: "CV2024"
 method: grid
 metric:
