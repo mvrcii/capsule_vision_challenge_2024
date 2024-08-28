@@ -246,8 +246,8 @@ def arg_parser():
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--reduced_data_mode", action="store_true",
                         help="Enable reduced data mode to use less data for faster iteration")
-    parser.add_argument("--wandb_project", default="SEER", type=str)
-    parser.add_argument("--entity", default="mvrcii_", type=str)
+    parser.add_argument("--wandb_project", type=str)
+    parser.add_argument("--entity", type=str)
 
     # === Paths ===
     parser.add_argument("--checkpoint_filename", type=str)
