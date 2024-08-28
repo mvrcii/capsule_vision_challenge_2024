@@ -1,0 +1,51 @@
+program: train.py
+project: "CV2024"
+method: grid
+metric:
+  goal: maximize
+  name: val_AUC_macro
+parameters:
+  # === Model ===
+  model_arch:
+    values: [ 'regnety_640.seer' ]
+  pretrained_checkpoint_dir:
+    values: [ 'pretrained_models' ]
+  checkpoint_filename:
+    values: [ 'run-20240826_194035-ancient-forest-381/best_epoch92_val_f1_weighted0.84.ckpt' ]
+  transform_path:
+    values: [ 'configs/transforms/alpha_transforms.py' ]
+
+  # === Training ===
+  max_epochs:
+    values: [ 10 ]
+  seed:
+    values: [ 42 ]
+  train_bs:
+    values: [ 16 ]
+  val_bs:
+    values: [ 64 ]
+  img_size:
+    values: [ 224 ]
+  num_workers:
+    values: [ 16 ]
+  ft_mode:
+    values: [ 'full' ]
+
+  # === Optimizer ===
+  optimizer:
+    values: [ 'adabelief' ]
+  lr:
+    values: [ 1e-5, 1e-6, 1e-7 ]
+  metric:
+    values: [ 'val_AUC_macro' ]
+
+  # === Scheduler ===
+  scheduler:
+    values: [ 'lambda' ]
+  lambda_factor:
+    values: [ 0.95 ]
+
+command:
+  - ${env}
+  - python
+  - ${program}
