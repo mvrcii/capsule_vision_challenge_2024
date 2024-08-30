@@ -65,14 +65,12 @@ def get_finished_wandb_runs():
     runs = api.runs(f'wuesuv/CV2024')
 
     finished_wandb_runs = []
-    print(len(runs))
     for run in runs:
-        print(run.state, run.name)
         if run.state != 'running':
             sweep_id = run.sweep.id if run.sweep else None
             finished_wandb_runs.append((run.name, run.id, sweep_id))
         if run.state == 'running':
-            logging.info(f"Excluded running run: {run.name} ({run.id})")
+            print(f"Excluded running run: {run.name} ({run.id})")
     return finished_wandb_runs
 
 
@@ -84,17 +82,15 @@ def check_val_results(checkpoint_dir, result_dir):
 
     finished_wandb_runs = get_finished_wandb_runs()
 
-    # result = []
-    # for ckpt_info in ckpt_infos:
-    #     for run_name, run_id, sweep_id in finished_wandb_runs:
-    #         if run_name in ckpt_info and sweep_id in ckpt_info:
-    #             result.append(ckpt_info._replace(run_id=run_id))
-    #
-    # print(len(result))
-    #
-    # print("\n".join(map(str, map(lambda x: x.run_id, result))))
+    result = []
+    for ckpt_info in ckpt_infos:
+        for run_name, run_id, sweep_id in finished_wandb_runs:
+            if run_name in ckpt_info and sweep_id in ckpt_info:
+                result.append(ckpt_info._replace(run_id=run_id))
 
+    print(len(result))
 
+    print("\n".join(map(str, map(lambda x: x.run_name, result))))
 
 
 
