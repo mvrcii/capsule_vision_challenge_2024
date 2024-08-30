@@ -65,7 +65,9 @@ def get_finished_wandb_runs():
     runs = api.runs(f'wuesuv/CV2024')
 
     finished_wandb_runs = []
+    print(len(runs))
     for run in runs:
+        print(run.state, run.name)
         if run.state != 'running':
             sweep_id = run.sweep.id if run.sweep else None
             finished_wandb_runs.append((run.name, run.id, sweep_id))
