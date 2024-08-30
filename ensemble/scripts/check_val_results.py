@@ -89,7 +89,6 @@ def check_val_results(checkpoint_dir, result_dir):
 
     assert check_duplicate_checkpoints(result)
 
-    print(len(result))
     print("\n".join(map(str, map(lambda x: x.wandb_name, result))))
 
     # val_metric_filenames = find_files_with_ending(result_dir, ending='.json')
@@ -99,7 +98,10 @@ def check_val_results(checkpoint_dir, result_dir):
     val_pred_filenames = find_files_with_ending(result_dir, ending='.csv')
     existing_pred_run_ids = set(filename.split('_')[0] for filename in val_pred_filenames)
     missing_pred_checkpoints = filter(lambda _x: _x.run_id not in existing_pred_run_ids, result)
-    print("\n".join(map(lambda x: x.wandb_name, missing_pred_checkpoints)))
+
+    print(f"Found {len(result)} finished runs without validation results.")
+
+    return missing_pred_checkpoints
 
 
 if __name__ == '__main__':
