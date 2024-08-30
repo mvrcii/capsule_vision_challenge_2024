@@ -112,11 +112,11 @@ def pred_checkpoint(ckpt_id, ckpt_run_name, ckpt_path, result_dir, dataset_path,
     data_module = PredictDataModule(
         class_mapping=class_mapping,
         transforms=transforms,
-        pred_bs=32,
+        pred_bs=64,
         dataset_path=dataset_path,
         dataset_csv_path=dataset_csv_path,
         fold_idx=1,
-        num_workers=0
+        num_workers=16
     )
     data_module.setup()
 
@@ -131,7 +131,8 @@ def pred_checkpoint(ckpt_id, ckpt_run_name, ckpt_path, result_dir, dataset_path,
 
     preds = trainer.predict(model, datamodule=data_module)
 
-    output_path = os.path.join(result_dir, f"{ckpt_id}_{ckpt_run_name}.csv")
+    print(preds)
+    # output_path = os.path.join(result_dir, f"{ckpt_id}_{ckpt_run_name}.csv")
 
 
 def main(args):
