@@ -90,7 +90,7 @@ def check_val_results(checkpoint_dir, result_dir):
 
     print(len(result))
 
-    print("\n".join(map(str, map(lambda x: x.run_name, result))))
+    print("\n".join(map(str, map(lambda x: x.wandb_name, result))))
 
 
 
