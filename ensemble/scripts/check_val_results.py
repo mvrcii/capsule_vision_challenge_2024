@@ -89,8 +89,6 @@ def check_val_results(checkpoint_dir, result_dir):
 
     assert check_duplicate_checkpoints(result)
 
-    print("\n".join(map(str, map(lambda x: x.wandb_name, result))))
-
     # val_metric_filenames = find_files_with_ending(result_dir, ending='.json')
 
     # Check for existing validation result files
