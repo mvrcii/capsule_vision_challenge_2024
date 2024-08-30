@@ -140,7 +140,7 @@ def main(args):
 
     for checkpoint in missing_pred_checkpoints:
         ckpt_path = checkpoint.rel_path
-        ckpt_run_name = checkpoint.run_name
+        ckpt_run_name = checkpoint.wandb_name
         ckpt_id = checkpoint.run_id
 
         pred_checkpoint(
