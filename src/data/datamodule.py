@@ -82,7 +82,9 @@ class DataModule(LightningDataModule):
         if self.val_frac != 1:
             X_val = X_val.sample(frac=self.val_frac)
 
-        logging.info(f"DataModule: Fold(s) {train_fold_idcs.join(', ')} with {len(X_train)} samples used for training")
+        logging.info(
+            f"DataModule: Fold(s) {', '.join(map(str, train_fold_idcs))} with {len(X_train)} samples used for training")
+
         logging.info(f"DataModule: Fold {val_fold_idx} with {len(X_val)} samples used for validation")
 
         # Apply class balancing
