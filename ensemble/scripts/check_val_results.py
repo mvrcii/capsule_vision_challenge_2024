@@ -1,8 +1,7 @@
 import argparse
-import logging
 import os
 import re
-from collections import namedtuple, Counter
+from collections import namedtuple
 
 import wandb
 
