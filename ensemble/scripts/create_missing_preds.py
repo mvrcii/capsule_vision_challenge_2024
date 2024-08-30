@@ -154,14 +154,14 @@ def main(args):
 
 
 if __name__ == '__main__':
-    argparse = argparse.ArgumentParser(description='Check validation results.')
-    argparse.add_argument('--checkpoint_dir', default="checkpoints", type=str,
+    parser = argparse.ArgumentParser(description='Check validation results.')
+    parser.add_argument('--checkpoint_dir', default="checkpoints", type=str,
                           help='Path to the checkpoint directory.')
-    argparse.add_argument('--result_dir', default="ensemble/val_results", type=str,
+    parser.add_argument('--result_dir', default="ensemble/val_results", type=str,
                           help='Path to the model validation results.')
-    argparse.add_argument('--dataset_path', default="../data/",
+    parser.add_argument('--dataset_path', default="../data/",
                           type=str, help='Path to the validation dataset.')
-    argparse.add_argument('--dataset_csv_path', default="dataset",
+    parser.add_argument('--dataset_csv_path', default="dataset",
                           type=str, help='Path to the validation dataset.')
-    args = argparse.parse_args()
+    args = parser.parse_args()
     main(args)
