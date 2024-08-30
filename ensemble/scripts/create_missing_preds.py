@@ -3,23 +3,47 @@ import json
 import logging
 import os
 import warnings
+from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import torch
 import wandb
+from PIL import Image
 from lightning import LightningDataModule, Trainer
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 
-from ensemble.scripts.check_val_results import check_val_results, CheckpointMetadata
-from src.data.dataset import ImageDataset
 from src.models.regnety.regnety import RegNetY
 from src.utils.transform_utils import load_transforms
 
 warnings.filterwarnings("ignore", ".*does not have many workers.*")
+warnings.filterwarnings("ignore", ".*tensorboardX.*")
+
+
+class PredictImageDataset(Dataset):
+    def __init__(self, df, transform):
+        self.df = df
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.df)
+
+    def __getitem__(self, idx):
+        image_path = Path(self.df.iloc[idx]['frame_path'])
+        image_path = image_path.as_posix()
+
+        with Image.open(image_path) as img:
+            image_np = np.array(img.convert('RGB'))
+
+            if self.transform is not None:
+                augmented = self.transform(image=image_np)
+                image_tensor = augmented['image']
+
+        return image_tensor
 
 
 class PredictDataModule(LightningDataModule):
-    def __init__(self, class_mapping, transforms, dataset_path, dataset_csv_path, fold_idx=1, num_workers=8,
+    def __init__(self, transforms, dataset_path, dataset_csv_path, fold_idx=1, num_workers=8,
                  pred_bs=32):
         super().__init__()
         self.dataset_path = dataset_path
@@ -28,7 +52,6 @@ class PredictDataModule(LightningDataModule):
         self.pred_bs = pred_bs
         self.num_workers = num_workers
         self.train_transform, self.val_transform = transforms
-        self.class_to_index = class_mapping
         self.datasets = {}
 
     def vectorized_path_update(self, dataset):
@@ -58,30 +81,22 @@ class PredictDataModule(LightningDataModule):
         if val_fold_idx not in unique_fold_idcs:
             raise ValueError(f"Fold index {val_fold_idx} not found in the available folds: {unique_fold_idcs}")
 
-        train_fold_idcs = unique_fold_idcs[unique_fold_idcs != val_fold_idx]
-
-        X_train = X_train_val[X_train_val['fold'] != self.fold_idx]
         X_val = X_train_val[X_train_val['fold'] == self.fold_idx]
 
-        logging.info(
-            f"DataModule: Fold(s) {', '.join(map(str, train_fold_idcs))} with {len(X_train)} samples used for training")
+        logging.info(f"DataModule: Fold {val_fold_idx} with {len(X_val)} samples used for prediction")
 
-        logging.info(f"DataModule: Fold {val_fold_idx} with {len(X_val)} samples used for validation")
-
-        X_train = self.vectorized_path_update(X_train)
         X_val = self.vectorized_path_update(X_val)
 
-        return X_train, X_val, X_test
+        return X_val, X_test
 
     def setup(self, stage=None):
-        X_train, X_val, X_test = self.__load_data()
+        X_val, X_test = self.__load_data()
 
         self.datasets = {
-            'train': ImageDataset(X_train, self.class_to_index, self.train_transform),
-            'val': ImageDataset(X_val, self.class_to_index, self.val_transform),
+            'val': PredictImageDataset(X_val, self.val_transform),
         }
         if X_test is not None:
-            self.datasets['test'] = ImageDataset(X_test, self.class_to_index, self.val_transform)
+            self.datasets['test'] = PredictImageDataset(X_test, self.val_transform)
 
     def predict_dataloader(self):
         return DataLoader(self.datasets['val'], batch_size=self.pred_bs, num_workers=self.num_workers, shuffle=False)
@@ -110,13 +125,12 @@ def pred_checkpoint(ckpt_id, ckpt_run_name, ckpt_path, result_dir, dataset_path,
     model.eval()
 
     data_module = PredictDataModule(
-        class_mapping=class_mapping,
         transforms=transforms,
-        pred_bs=64,
+        pred_bs=16,
         dataset_path=dataset_path,
         dataset_csv_path=dataset_csv_path,
         fold_idx=1,
-        num_workers=16
+        num_workers=0
     )
     data_module.setup()
 
@@ -135,33 +149,48 @@ def pred_checkpoint(ckpt_id, ckpt_run_name, ckpt_path, result_dir, dataset_path,
     # output_path = os.path.join(result_dir, f"{ckpt_id}_{ckpt_run_name}.csv")
 
 
+# def main(args):
+#     missing_pred_checkpoints: CheckpointMetadata = check_val_results(args.checkpoint_dir, args.result_dir)
+#
+#     for checkpoint in missing_pred_checkpoints:
+#         ckpt_path = checkpoint.rel_path
+#         ckpt_run_name = checkpoint.wandb_name
+#         ckpt_id = checkpoint.run_id
+#
+#         pred_checkpoint(
+#             ckpt_id=ckpt_id,
+#             ckpt_run_name=ckpt_run_name,
+#             ckpt_path=ckpt_path,
+#             result_dir=args.result_dir,
+#             dataset_path=args.dataset_path,
+#             dataset_csv_path=args.dataset_csv_path,
+#         )
+
+
 def main(args):
-    missing_pred_checkpoints: CheckpointMetadata = check_val_results(args.checkpoint_dir, args.result_dir)
+    ckpt_id = '4ema6q7u'
+    ckpt_run_name = 'sage-sweep-1'
+    ckpt_path = 'checkpoints/fast-sweep-2_epoch10_val_AUC_macro0.99.ckpt'
 
-    for checkpoint in missing_pred_checkpoints:
-        ckpt_path = checkpoint.rel_path
-        ckpt_run_name = checkpoint.wandb_name
-        ckpt_id = checkpoint.run_id
-
-        pred_checkpoint(
-            ckpt_id=ckpt_id,
-            ckpt_run_name=ckpt_run_name,
-            ckpt_path=ckpt_path,
-            result_dir=args.result_dir,
-            dataset_path=args.dataset_path,
-            dataset_csv_path=args.dataset_csv_path,
-        )
+    pred_checkpoint(
+        ckpt_id=ckpt_id,
+        ckpt_run_name=ckpt_run_name,
+        ckpt_path=ckpt_path,
+        result_dir=args.result_dir,
+        dataset_path=args.dataset_path,
+        dataset_csv_path=args.dataset_csv_path,
+    )
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Check validation results.')
     parser.add_argument('--checkpoint_dir', default="checkpoints", type=str,
-                          help='Path to the checkpoint directory.')
+                        help='Path to the checkpoint directory.')
     parser.add_argument('--result_dir', default="ensemble/val_results", type=str,
-                          help='Path to the model validation results.')
+                        help='Path to the model validation results.')
     parser.add_argument('--dataset_path', default="../data/",
-                          type=str, help='Path to the validation dataset.')
+                        type=str, help='Path to the validation dataset.')
     parser.add_argument('--dataset_csv_path', default="dataset",
-                          type=str, help='Path to the validation dataset.')
+                        type=str, help='Path to the validation dataset.')
     args = parser.parse_args()
     main(args)
