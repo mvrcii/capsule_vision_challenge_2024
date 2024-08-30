@@ -1,5 +1,9 @@
 import argparse
 import os
+import re
+from collections import namedtuple
+
+CheckpointMetadata = namedtuple('CheckpointMetadata', ['rel_path', 'base_name', 'wandb_name'])
 
 
 def find_ckpt_files(dir):
@@ -11,9 +15,29 @@ def find_ckpt_files(dir):
     return ckpt_files
 
 
+def get_base_name(path):
+    if path.startswith('checkpoints/sweep'):
+        basename = os.path.basename(path)
+        wandb_name = basename.split('_')[0]
+        return CheckpointMetadata(path, basename, wandb_name)
+    if path.startswith('checkpoints/run'):
+        pattern = r"run-\d{8}_\d{6}-(\w+-\w+-\d+)"
+        match = re.search(pattern, path)
+        if match:
+            wandb_name = match.group(1)
+        else:
+            print("No match found for run.")
+            raise ValueError("Es knallt!")
+        basename = os.path.basename(path)
+        return CheckpointMetadata(path, basename, wandb_name)
+    else:
+        raise ValueError("Es knallt gewaltig!")
+
+
 def check_val_results(checkpoint_dir):
     ckpt_dirs = find_ckpt_files(checkpoint_dir)
-    print(ckpt_dirs)
+    ckpt_infos = [get_base_name(ckpt) for ckpt in ckpt_dirs]
+    print("\n".join(str(ckpt_infos)))
 
 
 if __name__ == '__main__':
