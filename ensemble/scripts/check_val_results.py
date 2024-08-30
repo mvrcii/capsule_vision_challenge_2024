@@ -55,6 +55,7 @@ def check_duplicate_checkpoints(ckpt_infos):
         if (wandb_name, sweep_id) in x:
             print(f"Duplicate found: {wandb_name}, {sweep_id}")
             counts += 1
+        print(f"Adding {wandb_name}, {sweep_id}")
         x.add((wandb_name, sweep_id))
     if counts > 0:
         return False
