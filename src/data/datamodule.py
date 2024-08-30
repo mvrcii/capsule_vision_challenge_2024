@@ -73,8 +73,6 @@ class DataModule(LightningDataModule):
             raise ValueError(f"Fold index {val_fold_idx} not found in the available folds: {unique_fold_idcs}")
 
         train_fold_idcs = unique_fold_idcs[unique_fold_idcs != val_fold_idx]
-        logging.info(f"DataModule: Fold(s) {train_fold_idcs} used for training")
-        logging.info(f"DataModule: Fold {val_fold_idx} used for validation")
 
         X_train = X_train_val[X_train_val['fold'] != self.fold_idx]
         X_val = X_train_val[X_train_val['fold'] == self.fold_idx]
@@ -83,6 +81,9 @@ class DataModule(LightningDataModule):
             X_train = X_train.sample(frac=self.train_frac)
         if self.val_frac != 1:
             X_val = X_val.sample(frac=self.val_frac)
+
+        logging.info(f"DataModule: Fold(s) {train_fold_idcs.join(', ')} with {len(X_train)} samples used for training")
+        logging.info(f"DataModule: Fold {val_fold_idx} with {len(X_val)} samples used for validation")
 
         # Apply class balancing
         # X_train = self.__balance_classes(X_train)

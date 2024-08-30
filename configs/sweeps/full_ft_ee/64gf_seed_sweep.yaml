@@ -25,6 +25,8 @@ parameters:
     values: [ 16 ]
   val_bs:
     values: [ 64 ]
+  fold_id:
+    values: [ 1 ]
   img_size:
     values: [ 224 ]
   num_workers:
