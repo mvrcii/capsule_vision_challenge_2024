@@ -37,7 +37,7 @@ def get_base_name(path):
 def check_val_results(checkpoint_dir):
     ckpt_dirs = find_ckpt_files(checkpoint_dir)
     ckpt_infos = [get_base_name(ckpt) for ckpt in ckpt_dirs]
-    print("\n".join(ckpt_infos))
+    print("\n".join(map(str, ckpt_infos)))
 
 
 if __name__ == '__main__':
