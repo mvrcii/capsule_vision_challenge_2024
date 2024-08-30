@@ -25,7 +25,6 @@ def get_base_name(path):
         match = re.search(pattern, path)
         if match:
             sweep_id = match.group(1)
-            print("Extracted Sweep ID:", sweep_id)
         else:
             print("No sweep id found for sweep run.")
             raise ValueError("Es knallt!")
@@ -55,7 +54,6 @@ def check_duplicate_checkpoints(ckpt_infos):
         if (wandb_name, sweep_id) in x:
             print(f"Duplicate found: {wandb_name}, {sweep_id}")
             counts += 1
-        print(f"Adding {wandb_name}, {sweep_id}")
         x.add((wandb_name, sweep_id))
     if counts > 0:
         return False
@@ -86,11 +84,11 @@ def check_val_results(checkpoint_dir, result_dir):
 
     result = []
     for ckpt_info in ckpt_infos:
-        for wandb_name, run_id, sweep_id in finished_wandb_runs:
-            if wandb_name in ckpt_info and sweep_id in ckpt_info:
+        for run_name, run_id, sweep_id in finished_wandb_runs:
+            if run_name in ckpt_info and sweep_id in ckpt_info:
                 result.append(ckpt_info._replace(run_id=run_id))
             else:
-                print(f"Checkpoint {ckpt_info} not found in finished wandb runs.")
+                print(run_name, ckpt_info.wandb_name, sweep_id, ckpt_info.sweep_id)
     print(len(result))
 
 
