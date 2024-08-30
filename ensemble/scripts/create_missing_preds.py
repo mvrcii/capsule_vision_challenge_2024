@@ -11,8 +11,10 @@ import torch
 import wandb
 from PIL import Image
 from lightning import LightningDataModule, Trainer
+from torch import softmax
 from torch.utils.data import DataLoader, Dataset
 
+from ensemble.scripts.check_val_results import CheckpointMetadata, check_val_results
 from src.models.regnety.regnety import RegNetY
 from src.utils.transform_utils import load_transforms
 
@@ -112,6 +114,37 @@ def load_class_mapping(path):
     return class_mapping
 
 
+def save_predictions(preds, result_dir, ckpt_id, ckpt_run_name, class_mapping, dataloader):
+    frame_paths = []
+    probabilities_list = []
+    predicted_classnames = []
+
+    # Assume preds is a list of tensors
+    for pred, data in zip(preds, dataloader.dataset.df.iterrows()):
+        # Extract frame path
+        frame_path = data[1]['frame_path']
+        frame_paths.append(frame_path)
+
+        # Softmax to compute probabilities
+        probabilities = softmax(pred, dim=0).cpu().numpy()
+        probabilities_list.append(probabilities)
+
+        # Determine predicted class index
+        predicted_index = probabilities.argmax()
+        predicted_classname = class_mapping[predicted_index]
+        predicted_classnames.append(predicted_classname)
+
+    # Create DataFrame
+    df = pd.DataFrame(probabilities_list, columns=[f'class{i}' for i in range(probabilities_list[0].shape[0])])
+    df.insert(0, 'framepath', frame_paths)
+    df['predicted_classname'] = predicted_classnames
+
+    # Output path for the CSV
+    output_path = os.path.join(result_dir, f"{ckpt_id}_{ckpt_run_name}.csv")
+    df.to_csv(output_path, index=False)
+    print(f"Saved predictions to {output_path}")
+
+
 def pred_checkpoint(ckpt_id, ckpt_run_name, ckpt_path, result_dir, dataset_path, dataset_csv_path):
     api = wandb.Api()
     run = api.run(f'wuesuv/CV2024/{ckpt_id}')
@@ -145,41 +178,41 @@ def pred_checkpoint(ckpt_id, ckpt_run_name, ckpt_path, result_dir, dataset_path,
 
     preds = trainer.predict(model, datamodule=data_module)
 
-    print(preds)
-    # output_path = os.path.join(result_dir, f"{ckpt_id}_{ckpt_run_name}.csv")
-
-
-# def main(args):
-#     missing_pred_checkpoints: CheckpointMetadata = check_val_results(args.checkpoint_dir, args.result_dir)
-#
-#     for checkpoint in missing_pred_checkpoints:
-#         ckpt_path = checkpoint.rel_path
-#         ckpt_run_name = checkpoint.wandb_name
-#         ckpt_id = checkpoint.run_id
-#
-#         pred_checkpoint(
-#             ckpt_id=ckpt_id,
-#             ckpt_run_name=ckpt_run_name,
-#             ckpt_path=ckpt_path,
-#             result_dir=args.result_dir,
-#             dataset_path=args.dataset_path,
-#             dataset_csv_path=args.dataset_csv_path,
-#         )
+    save_predictions(preds, result_dir, ckpt_id, ckpt_run_name, class_mapping, data_module.predict_dataloader())
 
 
 def main(args):
-    ckpt_id = '4ema6q7u'
-    ckpt_run_name = 'sage-sweep-1'
-    ckpt_path = 'checkpoints/fast-sweep-2_epoch10_val_AUC_macro0.99.ckpt'
+    missing_pred_checkpoints: CheckpointMetadata = check_val_results(args.checkpoint_dir, args.result_dir)
 
-    pred_checkpoint(
-        ckpt_id=ckpt_id,
-        ckpt_run_name=ckpt_run_name,
-        ckpt_path=ckpt_path,
-        result_dir=args.result_dir,
-        dataset_path=args.dataset_path,
-        dataset_csv_path=args.dataset_csv_path,
-    )
+    for checkpoint in missing_pred_checkpoints:
+        ckpt_path = checkpoint.rel_path
+        ckpt_run_name = checkpoint.wandb_name
+        ckpt_id = checkpoint.run_id
+
+        pred_checkpoint(
+            ckpt_id=ckpt_id,
+            ckpt_run_name=ckpt_run_name,
+            ckpt_path=ckpt_path,
+            result_dir=args.result_dir,
+            dataset_path=args.dataset_path,
+            dataset_csv_path=args.dataset_csv_path,
+        )
+
+
+# DEBUGGING
+# def main(args):
+#     ckpt_id = '4ema6q7u'
+#     ckpt_run_name = 'sage-sweep-1'
+#     ckpt_path = 'checkpoints/fast-sweep-2_epoch10_val_AUC_macro0.99.ckpt'
+#
+#     pred_checkpoint(
+#         ckpt_id=ckpt_id,
+#         ckpt_run_name=ckpt_run_name,
+#         ckpt_path=ckpt_path,
+#         result_dir=args.result_dir,
+#         dataset_path=args.dataset_path,
+#         dataset_csv_path=args.dataset_csv_path,
+#     )
 
 
 if __name__ == '__main__':
