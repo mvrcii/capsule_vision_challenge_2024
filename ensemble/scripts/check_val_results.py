@@ -49,8 +49,12 @@ def check_val_results(checkpoint_dir):
     ckpt_dirs = find_ckpt_files(checkpoint_dir)
     ckpt_infos = [get_base_name(ckpt) for ckpt in ckpt_dirs]
     print("\n".join(map(str, ckpt_infos)))
-    print(Counter(map(lambda x: (x.wandb_name, x.sweep_id), ckpt_infos)))
 
+    x = set()
+    for wandb_name, sweep_id in list(map(lambda _x: (_x.wandb_name, _x.sweep_id), ckpt_infos)):
+        if (wandb_name, sweep_id) in x:
+            print(f"Duplicate found: {wandb_name}, {sweep_id}")
+        x.add((wandb_name, sweep_id))
 
 if __name__ == '__main__':
     argparse = argparse.ArgumentParser(description='Check validation results.')
