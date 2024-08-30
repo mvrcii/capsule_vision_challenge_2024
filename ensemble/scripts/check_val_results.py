@@ -86,10 +86,17 @@ def check_val_results(checkpoint_dir, result_dir):
     for ckpt_info in ckpt_infos:
         for run_name, run_id, sweep_id in finished_wandb_runs:
             if run_name in ckpt_info and sweep_id in ckpt_info:
-                result.append(ckpt_info._replace(run_id=run_id))
-            else:
+                print("Matching:")
                 print(run_name, ckpt_info.wandb_name, sweep_id, ckpt_info.sweep_id)
+                result.append(ckpt_info._replace(run_id=run_id))
+            # else:
+            #
+            #     print(run_name, ckpt_info.wandb_name, sweep_id, ckpt_info.sweep_id)
     print(len(result))
+
+    print("\n".join(map(str, map(lambda x: x.run_id, result))))
+
+
 
 
 
