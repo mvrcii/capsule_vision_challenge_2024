@@ -70,7 +70,7 @@ def get_finished_wandb_runs():
     for run in runs:
         if run.state != 'running':
             sweep_id = run.sweep.id if run.sweep else None
-            finished_wandb_runs = (run.name, run.id, sweep_id)
+            finished_wandb_runs.append((run.name, run.id, sweep_id))
         else:
             logging.info(f"Excluded running run: {run.name} ({run.id})")
     return finished_wandb_runs
