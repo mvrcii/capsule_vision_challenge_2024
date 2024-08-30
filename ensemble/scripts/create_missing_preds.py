@@ -159,11 +159,11 @@ def pred_checkpoint(ckpt_id, ckpt_run_name, ckpt_path, result_dir, dataset_path,
 
     data_module = PredictDataModule(
         transforms=transforms,
-        pred_bs=16,
+        pred_bs=64,
         dataset_path=dataset_path,
         dataset_csv_path=dataset_csv_path,
         fold_idx=1,
-        num_workers=0
+        num_workers=8
     )
     data_module.setup()
 
