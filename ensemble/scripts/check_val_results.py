@@ -64,7 +64,7 @@ def check_duplicate_checkpoints(ckpt_infos):
 
 def get_finished_wandb_runs():
     api = wandb.Api()
-    runs = api.run(f'wuesuv/CV2024')
+    runs = api.runs(f'wuesuv/CV2024')
 
     finished_wandb_runs = []
     for run in runs:
