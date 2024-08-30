@@ -1,7 +1,7 @@
 import argparse
 import os
 import re
-from collections import namedtuple
+from collections import namedtuple, Counter
 
 CheckpointMetadata = namedtuple('CheckpointMetadata', ['rel_path', 'base_name', 'wandb_name'])
 
@@ -38,6 +38,7 @@ def check_val_results(checkpoint_dir):
     ckpt_dirs = find_ckpt_files(checkpoint_dir)
     ckpt_infos = [get_base_name(ckpt) for ckpt in ckpt_dirs]
     print("\n".join(map(str, ckpt_infos)))
+    assert Counter(map(lambda x: x.wandb_name, ckpt_infos)).most_common(1)[0][1] == 1, "Duplicate W&B names found!"
 
 
 if __name__ == '__main__':
