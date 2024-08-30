@@ -87,7 +87,7 @@ def check_val_results(checkpoint_dir, result_dir):
             if run_name in ckpt_info and sweep_id in ckpt_info:
                 result.append(ckpt_info._replace(run_id=run_id))
 
-    assert check_duplicate_checkpoints(ckpt_infos)
+    assert check_duplicate_checkpoints(result)
 
     print(len(result))
 
