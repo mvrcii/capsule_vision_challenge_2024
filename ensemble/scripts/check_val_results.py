@@ -49,7 +49,7 @@ def check_val_results(checkpoint_dir):
     ckpt_dirs = find_ckpt_files(checkpoint_dir)
     ckpt_infos = [get_base_name(ckpt) for ckpt in ckpt_dirs]
     print("\n".join(map(str, ckpt_infos)))
-    print(Counter(map(lambda x: x.wandb_name, ckpt_infos)))
+    print(Counter(map(lambda x: (x.wandb_name, x.sweep_id), ckpt_infos)))
 
 
 if __name__ == '__main__':
