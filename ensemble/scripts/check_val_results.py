@@ -109,4 +109,4 @@ if __name__ == '__main__':
                           help='Path to the model validation results.')
     args = argparse.parse_args()
 
-    check_val_results(args.checkpoint_dir)
+    check_val_results(args.checkpoint_dir, args.result_dir)
