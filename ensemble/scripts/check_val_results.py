@@ -3,7 +3,7 @@ import os
 import re
 from collections import namedtuple, Counter
 
-CheckpointMetadata = namedtuple('CheckpointMetadata', ['rel_path', 'base_name', 'wandb_name'])
+CheckpointMetadata = namedtuple('CheckpointMetadata', ['rel_path', 'base_name', 'wandb_name', 'sweep_id'])
 
 
 def find_ckpt_files(dir):
@@ -17,19 +17,30 @@ def find_ckpt_files(dir):
 
 def get_base_name(path):
     if path.startswith('checkpoints/sweep'):
+        # Extract sweep ID
+        pattern = r"sweep-(\w+)/"
+        match = re.search(pattern, path)
+        if match:
+            sweep_id = match.group(1)
+            print("Extracted Sweep ID:", sweep_id)
+        else:
+            print("No sweep id found for sweep run.")
+            raise ValueError("Es knallt!")
+
         basename = os.path.basename(path)
         wandb_name = basename.split('_')[0]
-        return CheckpointMetadata(path, basename, wandb_name)
+        return CheckpointMetadata(path, basename, wandb_name, sweep_id)
+
     if path.startswith('checkpoints/run'):
         pattern = r"run-\d{8}_\d{6}-(\w+-\w+-\d+)"
         match = re.search(pattern, path)
         if match:
             wandb_name = match.group(1)
         else:
-            print("No match found for run.")
+            print("No wandb name found for run.")
             raise ValueError("Es knallt!")
         basename = os.path.basename(path)
-        return CheckpointMetadata(path, basename, wandb_name)
+        return CheckpointMetadata(path, basename, wandb_name, None)
     else:
         raise ValueError("Es knallt gewaltig!")
 
