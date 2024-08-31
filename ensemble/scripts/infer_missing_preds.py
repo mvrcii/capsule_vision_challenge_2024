@@ -2,6 +2,7 @@ import argparse
 import json
 import logging
 import os
+import sys
 import warnings
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from torch import softmax
 from torch.utils.data import DataLoader, Dataset
 
 from ensemble.scripts.check_val_results import CheckpointMetadata, check_val_results
+from ensemble.scripts.slurm_utils import run_on_slurm
 from src.models.regnety.regnety import RegNetY
 from src.utils.transform_utils import load_transforms
 
@@ -200,6 +202,11 @@ def pred_checkpoint(debug, ckpt_id, ckpt_run_name, ckpt_path, result_dir, datase
 
 
 def main(args):
+    if args.slurm:
+        python_cmd = "python " + " ".join(sys.argv[0:1] + [arg for arg in sys.argv[1:] if arg != '--slurm'])
+        run_on_slurm(python_cmd, args.gpu, args.attach, job_name="infer_missing_preds")
+        sys.exit()
+
     logging.basicConfig(
         format='%(levelname)s: %(message)s',
         level=logging.INFO
@@ -250,5 +257,8 @@ if __name__ == '__main__':
     parser.add_argument('--dataset_csv_path', default="dataset",
                         type=str, help='Path to the validation dataset.')
     parser.add_argument('--debug', action='store_true', help='Debug mode (default: False)')
+    parser.add_argument('-s', '--slurm', action='store_true', help='Run on SLURM (default: False)')
+    parser.add_argument('--gpu', type=int, choices=[0, 1], default=0, help="Choose GPU: 0=rtx2080ti, 1=rtx3090")
+    parser.add_argument('-a', '--attach', action='store_true', help="Attach to log output (default: False)")
     args = parser.parse_args()
     main(args)
