@@ -171,6 +171,8 @@ def pred_checkpoint(debug, ckpt_id, ckpt_run_name, ckpt_path, result_dir, datase
     logging.info("Run data retrieved successfully.")
 
     config = argparse.Namespace(**run.config)
+    config.ft_mode = None
+
     class_mapping = load_class_mapping(os.path.join(dataset_csv_path, 'class_mapping.json'))
     transforms = load_transforms(img_size=config.img_size, transforms_string=run.summary.get('transforms'))
 
