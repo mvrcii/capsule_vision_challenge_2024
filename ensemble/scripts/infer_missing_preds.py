@@ -23,6 +23,7 @@ from src.utils.transform_utils import load_transforms
 warnings.filterwarnings("ignore", ".*does not have many workers.*")
 warnings.filterwarnings("ignore", ".*tensorboardX.*")
 warnings.filterwarnings("ignore", ".*command is available on your system but is not used.*")
+warnings.filterwarnings("ignore", ".*Safe alternative available*")
 
 logging.basicConfig(
     level=logging.INFO,
