@@ -45,7 +45,7 @@ class PredictImageDataset(Dataset):
 
 
 class PredictDataModule(LightningDataModule):
-    def __init__(self, transforms, dataset_path, dataset_csv_path, fold_idx=1, num_workers=8,
+    def __init__(self, debug, transforms, dataset_path, dataset_csv_path, fold_idx=1, num_workers=8,
                  pred_bs=32):
         super().__init__()
         self.dataset_path = dataset_path
@@ -55,6 +55,7 @@ class PredictDataModule(LightningDataModule):
         self.num_workers = num_workers
         self.train_transform, self.val_transform = transforms
         self.datasets = {}
+        self.debug = debug
 
     def vectorized_path_update(self, dataset):
         dataset = dataset.copy()
@@ -93,6 +94,9 @@ class PredictDataModule(LightningDataModule):
 
     def setup(self, stage=None):
         X_val, X_test = self.__load_data()
+
+        if self.debug:
+            X_val = X_val.sample(n=0.05)
 
         self.datasets = {
             'val': PredictImageDataset(X_val, self.val_transform),
@@ -145,13 +149,15 @@ def save_predictions(preds, dataset_path, result_dir, ckpt_id, ckpt_run_name, cl
     # Update frame paths to remove the base dataset path
     df['framepath'] = df['framepath'].apply(lambda x: frame_path.split(dataset_path)[1][1:])
 
+    df = df.applymap('{:.2f}'.format)
+
     # Output path for the CSV
     output_path = os.path.join(result_dir, f"{ckpt_id}_{ckpt_run_name}.csv")
     df.to_csv(output_path, index=False)
     print(f"Saved predictions to {output_path}")
 
 
-def pred_checkpoint(ckpt_id, ckpt_run_name, ckpt_path, result_dir, dataset_path, dataset_csv_path):
+def pred_checkpoint(debug, ckpt_id, ckpt_run_name, ckpt_path, result_dir, dataset_path, dataset_csv_path):
     api = wandb.Api()
     run = api.run(f'wuesuv/CV2024/{ckpt_id}')
 
@@ -163,13 +169,20 @@ def pred_checkpoint(ckpt_id, ckpt_run_name, ckpt_path, result_dir, dataset_path,
     model.to(torch.device('cuda'))
     model.eval()
 
+    num_workers = 8
+    pred_bs = 64
+    if debug:
+        pred_bs = 16
+        num_workers = 0
+
     data_module = PredictDataModule(
+        debug=debug,
         transforms=transforms,
-        pred_bs=64,
+        pred_bs=pred_bs,
         dataset_path=dataset_path,
         dataset_csv_path=dataset_csv_path,
         fold_idx=1,
-        num_workers=8
+        num_workers=num_workers
     )
     data_module.setup()
 
@@ -197,6 +210,7 @@ def main(args):
         ckpt_id = checkpoint.run_id
 
         pred_checkpoint(
+            debug=args.debug,
             ckpt_id=ckpt_id,
             ckpt_run_name=ckpt_run_name,
             ckpt_path=ckpt_path,
@@ -232,5 +246,6 @@ if __name__ == '__main__':
                         type=str, help='Path to the validation dataset.')
     parser.add_argument('--dataset_csv_path', default="dataset",
                         type=str, help='Path to the validation dataset.')
+    parser.add_argument('--debug', action='store_true', help='Debug mode (default: False)')
     args = parser.parse_args()
     main(args)
