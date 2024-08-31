@@ -207,13 +207,15 @@ def pred_checkpoint(debug, ckpt_id, ckpt_run_name, ckpt_path, result_dir, datase
 
 
 def main(args):
-    if args.slurm:
+    if 'SLURM_JOB_ID' in os.environ:
+        logging.info("Running within a SLURM job; proceeding with normal execution.")
+    elif args.slurm:
+        logging.info("SLURM flag found but not running under SLURM; submitting job to SLURM.")
         python_cmd = "python " + " ".join(sys.argv[0:1] + [arg for arg in sys.argv[1:] if arg != '--slurm'])
-        run_on_slurm(python_cmd, args.gpu, args.attach, job_name="infer_missing_preds")
+        run_on_slurm(python_cmd, args.gpu, args.attach, job_name="preds")
         sys.exit()
 
     missing_pred_checkpoints: CheckpointMetadata = check_val_results(args.checkpoint_dir, args.result_dir)
-
     for checkpoint in missing_pred_checkpoints:
         ckpt_path = checkpoint.rel_path
         ckpt_run_name = checkpoint.wandb_name
@@ -259,6 +261,6 @@ if __name__ == '__main__':
     parser.add_argument('--debug', action='store_true', help='Debug mode (default: False)')
     parser.add_argument('-s', '--slurm', action='store_true', help='Run on SLURM (default: False)')
     parser.add_argument('--gpu', type=int, choices=[0, 1], default=0, help="Choose GPU: 0=rtx2080ti, 1=rtx3090")
-    parser.add_argument('-a', '--attach', action='store_true', help="Attach to log output (default: False)")
+    parser.add_argument('-a', '--attach', action='store_false', help="Attach to log output (default: True)")
     args = parser.parse_args()
     main(args)
