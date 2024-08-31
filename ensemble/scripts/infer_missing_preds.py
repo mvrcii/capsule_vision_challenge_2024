@@ -212,14 +212,23 @@ def pred_checkpoint(debug, ckpt_id, ckpt_run_name, ckpt_path, result_dir, datase
 
 def main(args):
     if 'SLURM_JOB_ID' in os.environ:
-        logging.info("Detected SLURM environment with JOB ID: " + os.environ['SLURM_JOB_ID'])
+        logging.info("Detected SLURM env with JOB ID: " + os.environ['SLURM_JOB_ID'])
+        logging.info(f"================== Configuration ===================")
+        logging.info("Checkpoint Directory: {:<50}".format(args.checkpoint_dir))
+        logging.info("Result Directory:     {:<50}".format(args.result_dir))
+        logging.info("Dataset Path:         {:<50}".format(args.dataset_path))
+        logging.info("Dataset CSV Path:     {:<50}".format(args.dataset_csv_path))
+        logging.info(f"----------------------------------------------------")
+        logging.info("Debug Mode:           {:<50}".format('Enabled' if args.debug else 'Disabled'))
+        logging.info("Running on SLURM:     {:<50}".format('Yes' if args.slurm else 'No'))
+        logging.info(f"====================================================")
     elif args.slurm:
-        logging.info("SLURM submission flag detected. Preparing to submit the script to SLURM.")
+        logging.info("SLURM flag detected: Preparing to submit to SLURM.")
         python_cmd = "python " + " ".join(sys.argv[0:1] + [arg for arg in sys.argv[1:] if arg != '--slurm'])
         run_on_slurm(python_cmd, args.gpu, args.attach, job_name="preds")
         sys.exit()
     else:
-        logging.info("Running locally without SLURM submission.")
+        logging.info("Running locally without SLURM.")
 
     logging.info("Loading checkpoint metadata from directory.")
     missing_pred_checkpoints: CheckpointMetadata = check_val_results(args.checkpoint_dir, args.result_dir)
@@ -272,14 +281,4 @@ if __name__ == '__main__':
     parser.add_argument('-a', '--attach', action='store_false', help="Attach to log output (default: True)")
     args = parser.parse_args()
 
-    logging.info(f"================== Configuration ===================")
-    logging.info("Configuration:")
-    logging.info("Checkpoint Directory: {:<40}".format(args.checkpoint_dir))
-    logging.info("Result Directory:     {:<40}".format(args.result_dir))
-    logging.info("Dataset Path:         {:<40}".format(args.dataset_path))
-    logging.info("Dataset CSV Path:     {:<40}".format(args.dataset_csv_path))
-    logging.info(f"----------------------------------------------------")
-    logging.info("Debug Mode:           {:<40}".format('Enabled' if args.debug else 'Disabled'))
-    logging.info("Running on SLURM:     {:<40}".format('Yes' if args.slurm else 'No'))
-    logging.info(f"====================================================")
     main(args)

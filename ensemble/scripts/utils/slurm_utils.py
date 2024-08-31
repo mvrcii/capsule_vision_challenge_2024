@@ -1,3 +1,4 @@
+import logging
 import re
 import subprocess
 import time
@@ -15,12 +16,12 @@ def run_on_slurm(python_cmd: str, gpu: int, attach: bool, job_name: str = "bash"
         match = re.search(r"Submitted batch job (\d+)", result.stdout)
         if match:
             job_id = match.group(1)
-            print(f"Slurm job ID: {job_id}")
+            logging.info(f"Slurm job ID: {job_id}")
 
             if attach:
-                print("Attaching to log file... (waiting 5s)")
+                logging.info("Attaching to log file.")
                 time.sleep(5)
                 tail_cmd = f"tail -f logs/slurm-{job_id}.out"
                 subprocess.run(tail_cmd, shell=True)
         else:
-            print("Failed to submit job to Slurm or parse job ID.")
+            logging.info("Failed to submit job to Slurm or parse job ID.")
