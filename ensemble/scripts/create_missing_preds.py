@@ -149,8 +149,6 @@ def save_predictions(preds, dataset_path, result_dir, ckpt_id, ckpt_run_name, cl
     # Update frame paths to remove the base dataset path
     df['framepath'] = df['framepath'].apply(lambda x: frame_path.split(dataset_path)[1][1:])
 
-    df = df.applymap('{:.2f}'.format)
-
     # Output path for the CSV
     output_path = os.path.join(result_dir, f"{ckpt_id}_{ckpt_run_name}.csv")
     df.to_csv(output_path, index=False)
