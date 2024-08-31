@@ -19,10 +19,7 @@ def find_files_with_ending(dir, file_only=False, ending='.ckpt'):
     for root, dirs, files in os.walk(dir):
         for file in files:
             if file.endswith(ending):
-                if file_only:
-                    files.append(file)
-                else:
-                    files.append(os.path.join(root, file))
+                files.append(os.path.join(root, file))
     logging.info(f"Found {len(files)} files with {ending} ending.")
     return files
 
