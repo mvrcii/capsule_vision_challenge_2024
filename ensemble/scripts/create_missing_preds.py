@@ -94,9 +94,12 @@ class PredictDataModule(LightningDataModule):
     def setup(self, stage=None):
         X_val, X_test = self.__load_data()
 
+        X_val = X_val.sample(frac=0.05)
+
         self.datasets = {
             'val': PredictImageDataset(X_val, self.val_transform),
         }
+
         if X_test is not None:
             self.datasets['test'] = PredictImageDataset(X_test, self.val_transform)
 
@@ -114,30 +117,35 @@ def load_class_mapping(path):
     return class_mapping
 
 
-def save_predictions(preds, result_dir, ckpt_id, ckpt_run_name, class_mapping, dataloader):
+def save_predictions(preds, dataset_path, result_dir, ckpt_id, ckpt_run_name, class_mapping, dataloader):
+    idx_to_class = {v: k for k, v in class_mapping.items()}
+
+    # Collect data for DataFrame
     frame_paths = []
     probabilities_list = []
     predicted_classnames = []
 
     # Assume preds is a list of tensors
-    for pred, data in zip(preds, dataloader.dataset.df.iterrows()):
-        # Extract frame path
-        frame_path = data[1]['frame_path']
-        frame_paths.append(frame_path)
+    for pred_batch in preds:
+        for pred, data in zip(pred_batch, dataloader.dataset.df.iterrows()):
+            frame_path = data[1]['frame_path']
+            frame_paths.append(frame_path)
 
-        # Softmax to compute probabilities
-        probabilities = softmax(pred, dim=0).cpu().numpy()
-        probabilities_list.append(probabilities)
+            # Softmax to compute probabilities
+            probabilities = softmax(pred, dim=0).cpu().numpy()
+            probabilities_list.append(probabilities)
 
-        # Determine predicted class index
-        predicted_index = probabilities.argmax()
-        predicted_classname = class_mapping[predicted_index]
-        predicted_classnames.append(predicted_classname)
+            predicted_index = probabilities.argmax()
+
+            predicted_classnames.append(idx_to_class[predicted_index])
 
     # Create DataFrame
     df = pd.DataFrame(probabilities_list, columns=[f'class{i}' for i in range(probabilities_list[0].shape[0])])
     df.insert(0, 'framepath', frame_paths)
     df['predicted_classname'] = predicted_classnames
+
+    # Update frame paths to remove the base dataset path
+    df['framepath'] = df['framepath'].apply(lambda x: frame_path.split(dataset_path)[1][1:])
 
     # Output path for the CSV
     output_path = os.path.join(result_dir, f"{ckpt_id}_{ckpt_run_name}.csv")
@@ -159,7 +167,7 @@ def pred_checkpoint(ckpt_id, ckpt_run_name, ckpt_path, result_dir, dataset_path,
 
     data_module = PredictDataModule(
         transforms=transforms,
-        pred_bs=128,
+        pred_bs=64,
         dataset_path=dataset_path,
         dataset_csv_path=dataset_csv_path,
         fold_idx=1,
@@ -178,7 +186,8 @@ def pred_checkpoint(ckpt_id, ckpt_run_name, ckpt_path, result_dir, dataset_path,
 
     preds = trainer.predict(model, datamodule=data_module)
 
-    save_predictions(preds, result_dir, ckpt_id, ckpt_run_name, class_mapping, data_module.predict_dataloader())
+    save_predictions(preds, dataset_path, result_dir, ckpt_id, ckpt_run_name, class_mapping,
+                     data_module.predict_dataloader())
 
 
 def main(args):
