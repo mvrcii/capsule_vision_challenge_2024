@@ -12,17 +12,17 @@ parameters:
   pretrained_checkpoint_dir:
     values: [ 'pretrained_models' ]
   checkpoint_filename:
-    values: [ 'run-20240826_194035-ancient-forest-381/best_epoch92_val_f1_weighted0.84.ckpt' ]
+    values: [ 'run-20240828_225339-grateful-silence-409/best_epoch69_val_AUC_macro0.99.ckpt' ]
   transform_path:
     values: [ 'configs/transforms/alpha_transforms.py' ]
 
   # === Training ===
   max_epochs:
-    values: [ 20 ]
+    values: [ 50 ]
   seed:
-    values: [ 2, 7, 11, 29, 42 ]
+    values: [ 2, 11 ]
   train_bs:
-    values: [ 16 ]
+    values: [ 8, 16 ]
   val_bs:
     values: [ 64 ]
   fold_id:
@@ -44,7 +44,7 @@ parameters:
 
   # === Scheduler ===
   scheduler:
-    values: [ 'cosine', 'lambda' ]
+    values: [ 'lambda' ]
   lambda_factor:
     values: [ 0.95 ]
 
