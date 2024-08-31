@@ -6,7 +6,12 @@ from collections import namedtuple
 
 import wandb
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+from ensemble.scripts.utils.logger_utils import CustomFormatter
+
+logging.basicConfig(level=logging.DEBUG)
+console = logging.StreamHandler()
+console.setFormatter(CustomFormatter())
+logging.getLogger('').addHandler(console)
 
 CheckpointMetadata = namedtuple('CheckpointMetadata', ['rel_path', 'base_name', 'wandb_name', 'sweep_id', 'run_id'])
 
@@ -93,7 +98,7 @@ def check_val_results(checkpoint_dir, result_dir):
     val_pred_filenames = find_files_with_ending(result_dir, ending='.csv')
     existing_pred_run_ids = set(filename.split('_')[0] for filename in val_pred_filenames)
     missing_pred_checkpoints = [ckpt for ckpt in result if ckpt.run_id not in existing_pred_run_ids]
-    logging.info(f"Found {len(result)} finished runs without validation results.")
+    logging.info(f"Found {len(missing_pred_checkpoints)} finished runs without validation results.")
     return missing_pred_checkpoints
 
 

@@ -16,12 +16,18 @@ from torch import softmax
 from torch.utils.data import DataLoader, Dataset
 
 from ensemble.scripts.check_val_results import CheckpointMetadata, check_val_results
-from ensemble.scripts.slurm_utils import run_on_slurm
+from ensemble.scripts.utils.logger_utils import CustomFormatter
+from ensemble.scripts.utils.slurm_utils import run_on_slurm
 from src.models.regnety.regnety import RegNetY
 from src.utils.transform_utils import load_transforms
 
 warnings.filterwarnings("ignore", ".*does not have many workers.*")
 warnings.filterwarnings("ignore", ".*tensorboardX.*")
+
+logging.basicConfig(level=logging.DEBUG)
+console = logging.StreamHandler()
+console.setFormatter(CustomFormatter())
+logging.getLogger('').addHandler(console)
 
 
 class PredictImageDataset(Dataset):
@@ -206,11 +212,6 @@ def main(args):
         python_cmd = "python " + " ".join(sys.argv[0:1] + [arg for arg in sys.argv[1:] if arg != '--slurm'])
         run_on_slurm(python_cmd, args.gpu, args.attach, job_name="infer_missing_preds")
         sys.exit()
-
-    logging.basicConfig(
-        format='%(levelname)s: %(message)s',
-        level=logging.INFO
-    )
 
     missing_pred_checkpoints: CheckpointMetadata = check_val_results(args.checkpoint_dir, args.result_dir)
 
