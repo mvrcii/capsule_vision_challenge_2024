@@ -86,17 +86,21 @@ def get_finished_wandb_runs():
 def check_val_results(checkpoint_dir, result_dir):
     ckpt_dirs = find_files_with_ending(checkpoint_dir, ending='.ckpt')
     ckpt_infos = [get_base_name(ckpt) for ckpt in ckpt_dirs]
-    valid_wandb_runs = get_finished_wandb_runs() # run_name, run_id, sweep_id
+    valid_wandb_runs = get_finished_wandb_runs()  # run_name, run_id, sweep_id
     result = []
     for ckpt_info in ckpt_infos:
         for run_name, run_id, sweep_id in valid_wandb_runs:
             if run_name == ckpt_info.wandb_name and (sweep_id == ckpt_info.sweep_id or ckpt_info.sweep_id is None):
                 result.append(ckpt_info._replace(run_id=run_id))
+
     assert check_duplicate_checkpoints(result)
 
     # Proceed to filter out runs with already existing prediction files
     val_pred_filenames = find_files_with_ending(result_dir, ending='.csv')
     existing_pred_run_ids = set(filename.split('_')[0] for filename in val_pred_filenames)
+    existing_runs_str = ", ".join(existing_pred_run_ids)
+    logging.info(f"Existing predictions found for ID: {existing_runs_str}")
+
     missing_pred_checkpoints = list(filter(lambda _x: _x.run_id not in existing_pred_run_ids, result))
 
     logging.info(f"Total missing prediction checkpoints found: {len(missing_pred_checkpoints)}")
