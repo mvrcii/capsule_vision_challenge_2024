@@ -35,7 +35,7 @@ def get_base_name(path):
         if match:
             sweep_id = match.group(1)
         else:
-            logging.info("No sweep id found for sweep run.")
+            logging.error("No sweep id found for sweep run.")
             raise ValueError("Es knallt!")
 
         basename = os.path.basename(path)
@@ -48,12 +48,12 @@ def get_base_name(path):
         if match:
             wandb_name = match.group(1)
         else:
-            logging.info("No wandb name found for run.")
+            logging.error("No wandb name found for run.")
             raise ValueError("Es knallt!")
         basename = os.path.basename(path)
         return CheckpointMetadata(path, basename, wandb_name, None, None)
 
-    logging.error("Invalid checkpoint path format.")
+    logging.critical("Invalid checkpoint path format.")
     raise ValueError("Invalid path format.")
 
 
@@ -75,9 +75,9 @@ def get_finished_wandb_runs():
     valid_runs = []
     for run in runs:
         if run.state == 'running':
-            logging.info(f"Excluding running run: {run.name} ({run.id})")
+            logging.warning(f"Excluding running run: {run.name} ({run.id})")
         elif run.summary.get('transforms') is None:
-            logging.info(f"Excluding run without transforms: {run.name} ({run.id})")
+            logging.warning(f"Excluding run without transforms: {run.name} ({run.id})")
         else:
             sweep_id = run.sweep.id if run.sweep else None
             valid_runs.append((run.name, run.id, sweep_id))
