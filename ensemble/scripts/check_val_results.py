@@ -100,10 +100,9 @@ def check_val_results(checkpoint_dir, result_dir):
 
     # Proceed to filter out runs with already existing prediction files
     val_pred_filenames = find_files_with_ending(result_dir, file_only=True, ending='.csv')
-    logging.info(val_pred_filenames)
     existing_pred_run_ids = set(filename.split('_')[0] for filename in val_pred_filenames)
     existing_runs_str = ", ".join(existing_pred_run_ids)
-    logging.info(f"Existing predictions found for ID: {existing_runs_str}")
+    logging.info(f"Existing predictions found for ID(s): {existing_runs_str}")
 
     missing_pred_checkpoints = list(filter(lambda _x: _x.run_id not in existing_pred_run_ids, result))
 
