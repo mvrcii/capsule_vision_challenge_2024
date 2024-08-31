@@ -94,8 +94,6 @@ class PredictDataModule(LightningDataModule):
     def setup(self, stage=None):
         X_val, X_test = self.__load_data()
 
-        X_val = X_val.sample(frac=0.05)
-
         self.datasets = {
             'val': PredictImageDataset(X_val, self.val_transform),
         }
