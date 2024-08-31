@@ -6,19 +6,11 @@ from collections import namedtuple
 
 import wandb
 
-from ensemble.scripts.utils.logger_utils import CustomFormatter
-
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-logger.propagate = False
-
-for handler in logger.handlers[:]:
-    logger.removeHandler(handler)
-
-console = logging.StreamHandler()
-console.setFormatter(CustomFormatter())
-logger.addHandler(console)
-
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 CheckpointMetadata = namedtuple('CheckpointMetadata', ['rel_path', 'base_name', 'wandb_name', 'sweep_id', 'run_id'])
 
 
@@ -41,7 +33,7 @@ def get_base_name(path):
         if match:
             sweep_id = match.group(1)
         else:
-            logging.error("No sweep id found for sweep run.")
+            logging.info("No sweep id found for sweep run.")
             raise ValueError("Es knallt!")
 
         basename = os.path.basename(path)
@@ -54,12 +46,12 @@ def get_base_name(path):
         if match:
             wandb_name = match.group(1)
         else:
-            logging.error("No wandb name found for run.")
+            logging.info("No wandb name found for run.")
             raise ValueError("Es knallt!")
         basename = os.path.basename(path)
         return CheckpointMetadata(path, basename, wandb_name, None, None)
 
-    logging.critical("Invalid checkpoint path format.")
+    logging.error("Invalid checkpoint path format.")
     raise ValueError("Invalid path format.")
 
 
@@ -81,9 +73,9 @@ def get_finished_wandb_runs():
     valid_runs = []
     for run in runs:
         if run.state == 'running':
-            logging.warning(f"Excluding running run: {run.name} ({run.id})")
+            logging.info(f"Excluding running run: {run.name} ({run.id})")
         elif run.summary.get('transforms') is None:
-            logging.warning(f"Excluding run without transforms: {run.name} ({run.id})")
+            logging.info(f"Excluding run without transforms: {run.name} ({run.id})")
         else:
             sweep_id = run.sweep.id if run.sweep else None
             valid_runs.append((run.name, run.id, sweep_id))
