@@ -1,8 +1,11 @@
 import logging
+import warnings
 
 import timm
 
 from src.models.abstract_model import AbstractLightningModule
+
+warnings.filterwarnings("ignore", ".*Safe alternative available*")
 
 
 class RegNetY(AbstractLightningModule):

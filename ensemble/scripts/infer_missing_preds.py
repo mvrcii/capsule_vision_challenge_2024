@@ -161,7 +161,7 @@ def save_predictions(preds, dataset_path, result_dir, ckpt_id, ckpt_run_name, cl
     # Output path for the CSV
     output_path = os.path.join(result_dir, f"{ckpt_id}_{ckpt_run_name}.csv")
     df.to_csv(output_path, index=False)
-    logging.info(f"Saved predictions to {output_path}")
+    logging.info(f"\nSaved predictions to {output_path}")
 
 
 def pred_checkpoint(debug, ckpt_id, ckpt_run_name, ckpt_path, result_dir, dataset_path, dataset_csv_path):
@@ -230,10 +230,9 @@ def main(args):
     else:
         logging.info("Running locally without SLURM.")
 
-    logging.info("Loading checkpoint metadata from directory.")
     missing_pred_checkpoints: CheckpointMetadata = check_val_results(args.checkpoint_dir, args.result_dir)
     for checkpoint in missing_pred_checkpoints:
-        logging.info(f"Processing checkpoint: {checkpoint.wandb_name}")
+        logging.info(f"\n================== {checkpoint.wandb_name} ==================")
         ckpt_path = checkpoint.rel_path
         ckpt_run_name = checkpoint.wandb_name
         ckpt_id = checkpoint.run_id
@@ -246,7 +245,7 @@ def main(args):
             dataset_path=args.dataset_path,
             dataset_csv_path=args.dataset_csv_path,
         )
-        logging.info(f"Finished processing checkpoint: {ckpt_run_name}")
+        logging.info(f"=============================================================\n")
     logging.info("All checkpoints have been processed.")
 
 # DEBUGGING
