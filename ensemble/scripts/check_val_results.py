@@ -9,9 +9,15 @@ import wandb
 from ensemble.scripts.utils.logger_utils import CustomFormatter
 
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+logger.propagate = False
+
+for handler in logger.handlers[:]:
+    logger.removeHandler(handler)
+
 console = logging.StreamHandler()
 console.setFormatter(CustomFormatter())
-logging.getLogger('').addHandler(console)
+logger.addHandler(console)
 
 CheckpointMetadata = namedtuple('CheckpointMetadata', ['rel_path', 'base_name', 'wandb_name', 'sweep_id', 'run_id'])
 
