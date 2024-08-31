@@ -282,7 +282,7 @@ if __name__ == '__main__':
     parser.add_argument('--debug', action='store_true', help='Debug mode (default: False)')
     parser.add_argument('-s', '--slurm', action='store_true', help='Run on SLURM (default: False)')
     parser.add_argument('--gpu', type=int, choices=[0, 1], default=0, help="Choose GPU: 0=rtx2080ti, 1=rtx3090")
-    parser.add_argument('-a', '--attach', action='store_false', help="Attach to log output (default: True)")
+    parser.add_argument('-a', '--attach', action='store_true', help="Attach to log output (default: False)")
     args = parser.parse_args()
 
     main(args)
