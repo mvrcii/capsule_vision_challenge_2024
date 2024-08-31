@@ -63,7 +63,7 @@ def check_duplicate_checkpoints(ckpt_infos):
             logging.warning(f"Duplicate found: {metadata.wandb_name}, {metadata.sweep_id}")
             duplicate_count += 1
         seen.add((metadata.wandb_name, metadata.sweep_id))
-    logging.info(f"Checked for duplicates, found {duplicate_count} duplicates.")
+    logging.info(f"Found {duplicate_count} duplicates.")
     return duplicate_count == 0
 
 
@@ -96,7 +96,7 @@ def check_val_results(checkpoint_dir, result_dir):
     val_pred_filenames = find_files_with_ending(result_dir, ending='.csv')
     existing_pred_run_ids = set(filename.split('_')[0] for filename in val_pred_filenames)
     missing_pred_checkpoints = [ckpt for ckpt in result if ckpt.run_id not in existing_pred_run_ids]
-    logging.info(f"Found {len(missing_pred_checkpoints)} finished runs without validation results.")
+    logging.info(f"Found {len(missing_pred_checkpoints)} finished runs with missing validation preds.")
     return missing_pred_checkpoints
 
 
