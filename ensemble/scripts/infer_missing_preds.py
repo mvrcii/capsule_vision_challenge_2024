@@ -163,8 +163,10 @@ def save_predictions(preds, dataset_path, result_dir, ckpt_id, ckpt_run_name, cl
 
 
 def pred_checkpoint(debug, ckpt_id, ckpt_run_name, ckpt_path, result_dir, dataset_path, dataset_csv_path):
+    logging.info(f"Connecting to W&B API to fetch run data for run: {ckpt_run_name}")
     api = wandb.Api()
     run = api.run(f'wuesuv/CV2024/{ckpt_id}')
+    logging.info("Run data retrieved successfully.")
 
     config = argparse.Namespace(**run.config)
     class_mapping = load_class_mapping(os.path.join(dataset_csv_path, 'class_mapping.json'))
@@ -208,19 +210,22 @@ def pred_checkpoint(debug, ckpt_id, ckpt_run_name, ckpt_path, result_dir, datase
 
 def main(args):
     if 'SLURM_JOB_ID' in os.environ:
-        logging.info("Running within a SLURM job; proceeding with normal execution.")
+        logging.info("Detected SLURM environment with JOB ID: " + os.environ['SLURM_JOB_ID'])
     elif args.slurm:
-        logging.info("SLURM flag found but not running under SLURM; submitting job to SLURM.")
+        logging.info("SLURM submission flag detected. Preparing to submit the script to SLURM.")
         python_cmd = "python " + " ".join(sys.argv[0:1] + [arg for arg in sys.argv[1:] if arg != '--slurm'])
         run_on_slurm(python_cmd, args.gpu, args.attach, job_name="preds")
         sys.exit()
+    else:
+        logging.info("Running locally without SLURM submission.")
 
+    logging.info("Loading checkpoint metadata from directory.")
     missing_pred_checkpoints: CheckpointMetadata = check_val_results(args.checkpoint_dir, args.result_dir)
     for checkpoint in missing_pred_checkpoints:
+        logging.info(f"Processing checkpoint: {checkpoint.wandb_name}")
         ckpt_path = checkpoint.rel_path
         ckpt_run_name = checkpoint.wandb_name
         ckpt_id = checkpoint.run_id
-
         pred_checkpoint(
             debug=args.debug,
             ckpt_id=ckpt_id,
@@ -230,7 +235,8 @@ def main(args):
             dataset_path=args.dataset_path,
             dataset_csv_path=args.dataset_csv_path,
         )
-
+        logging.info(f"Finished processing checkpoint: {ckpt_run_name}")
+    logging.info("All checkpoints have been processed.")
 
 # DEBUGGING
 # def main(args):
@@ -263,4 +269,12 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', type=int, choices=[0, 1], default=0, help="Choose GPU: 0=rtx2080ti, 1=rtx3090")
     parser.add_argument('-a', '--attach', action='store_false', help="Attach to log output (default: True)")
     args = parser.parse_args()
+
+    logging.info("Starting script with the following configuration:")
+    logging.info(f"Checkpoint Directory: {args.checkpoint_dir}")
+    logging.info(f"Result Directory: {args.result_dir}")
+    logging.info(f"Dataset Path: {args.dataset_path}")
+    logging.info(f"Dataset CSV Path: {args.dataset_csv_path}")
+    logging.info(f"Debug Mode: {'Enabled' if args.debug else 'Disabled'}")
+    logging.info(f"Running on SLURM: {'Yes' if args.slurm else 'No'}")
     main(args)

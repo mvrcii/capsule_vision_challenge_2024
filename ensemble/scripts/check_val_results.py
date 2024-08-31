@@ -96,7 +96,7 @@ def check_val_results(checkpoint_dir, result_dir):
     val_pred_filenames = find_files_with_ending(result_dir, ending='.csv')
     existing_pred_run_ids = set(filename.split('_')[0] for filename in val_pred_filenames)
     missing_pred_checkpoints = [ckpt for ckpt in result if ckpt.run_id not in existing_pred_run_ids]
-    logging.info(f"Found {len(missing_pred_checkpoints)} finished runs with missing validation preds.")
+    logging.info(f"Total missing prediction checkpoints found: {len(missing_pred_checkpoints)}")
     return missing_pred_checkpoints
 
 
