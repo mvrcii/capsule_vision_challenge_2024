@@ -14,14 +14,17 @@ logging.basicConfig(
 CheckpointMetadata = namedtuple('CheckpointMetadata', ['rel_path', 'base_name', 'wandb_name', 'sweep_id', 'run_id'])
 
 
-def find_files_with_ending(dir, ending='.ckpt'):
-    ckpt_files = []
+def find_files_with_ending(dir, file_only=False, ending='.ckpt'):
+    files = []
     for root, dirs, files in os.walk(dir):
         for file in files:
             if file.endswith(ending):
-                ckpt_files.append(os.path.join(root, file))
-    logging.info(f"Found {len(ckpt_files)} checkpoint files with {ending} ending.")
-    return ckpt_files
+                if file_only:
+                    files.append(file)
+                else:
+                    files.append(os.path.join(root, file))
+    logging.info(f"Found {len(files)} files with {ending} ending.")
+    return files
 
 
 def get_base_name(path):
@@ -96,7 +99,7 @@ def check_val_results(checkpoint_dir, result_dir):
     assert check_duplicate_checkpoints(result)
 
     # Proceed to filter out runs with already existing prediction files
-    val_pred_filenames = find_files_with_ending(result_dir, ending='.csv')
+    val_pred_filenames = find_files_with_ending(result_dir, file_only=True, ending='.csv')
     logging.info(val_pred_filenames)
     existing_pred_run_ids = set(filename.split('_')[0] for filename in val_pred_filenames)
     existing_runs_str = ", ".join(existing_pred_run_ids)
