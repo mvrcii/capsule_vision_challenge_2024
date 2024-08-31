@@ -152,7 +152,7 @@ def save_predictions(preds, dataset_path, result_dir, ckpt_id, ckpt_run_name, cl
     # Output path for the CSV
     output_path = os.path.join(result_dir, f"{ckpt_id}_{ckpt_run_name}.csv")
     df.to_csv(output_path, index=False)
-    print(f"Saved predictions to {output_path}")
+    logging.info(f"Saved predictions to {output_path}")
 
 
 def pred_checkpoint(debug, ckpt_id, ckpt_run_name, ckpt_path, result_dir, dataset_path, dataset_csv_path):
@@ -184,7 +184,7 @@ def pred_checkpoint(debug, ckpt_id, ckpt_run_name, ckpt_path, result_dir, datase
     )
     data_module.setup()
 
-    print("Pred/Val Images:", len(data_module.predict_dataloader().dataset))
+    logging.info("Pred/Val Images:", len(data_module.predict_dataloader().dataset))
 
     trainer = Trainer(
         accelerator="gpu" if torch.cuda.is_available() else "cpu",
@@ -200,6 +200,11 @@ def pred_checkpoint(debug, ckpt_id, ckpt_run_name, ckpt_path, result_dir, datase
 
 
 def main(args):
+    logging.basicConfig(
+        format='%(levelname)s: %(message)s',
+        level=logging.INFO
+    )
+
     missing_pred_checkpoints: CheckpointMetadata = check_val_results(args.checkpoint_dir, args.result_dir)
 
     for checkpoint in missing_pred_checkpoints:

@@ -63,14 +63,17 @@ def get_finished_wandb_runs():
     api = wandb.Api()
     runs = api.runs(f'wuesuv/CV2024')
 
-    finished_wandb_runs, running_wandb_runs = [], []
+    valid_runs = []
     for run in runs:
         if run.state != 'running':
+            if run.summary.get('transforms') is None:
+                print(f"Excluded run without transforms: {run.name} ({run.id})")
+                continue
             sweep_id = run.sweep.id if run.sweep else None
-            finished_wandb_runs.append((run.name, run.id, sweep_id))
+            valid_runs.append((run.name, run.id, sweep_id))
         if run.state == 'running':
             print(f"Excluded running run: {run.name} ({run.id})")
-    return finished_wandb_runs
+    return valid_runs
 
 
 def check_val_results(checkpoint_dir, result_dir):
@@ -78,11 +81,11 @@ def check_val_results(checkpoint_dir, result_dir):
     ckpt_infos = [get_base_name(ckpt) for ckpt in ckpt_dirs]
 
     # run_name, run_id, sweep_id
-    finished_wandb_runs = get_finished_wandb_runs()
+    valid_wandb_runs = get_finished_wandb_runs()
 
     result = []
     for ckpt_info in ckpt_infos:
-        for run_name, run_id, sweep_id in finished_wandb_runs:
+        for run_name, run_id, sweep_id in valid_wandb_runs:
             if run_name in ckpt_info and sweep_id in ckpt_info:
                 result.append(ckpt_info._replace(run_id=run_id))
 
