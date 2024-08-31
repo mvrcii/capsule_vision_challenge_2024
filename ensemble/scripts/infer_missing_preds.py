@@ -194,7 +194,7 @@ def pred_checkpoint(debug, ckpt_id, ckpt_run_name, ckpt_path, result_dir, datase
     )
     data_module.setup()
 
-    logging.info("Pred/Val Images:", len(data_module.predict_dataloader().dataset))
+    logging.info(f"Prediction Images (validation): {len(data_module.predict_dataloader().dataset)}")
 
     trainer = Trainer(
         accelerator="gpu" if torch.cuda.is_available() else "cpu",
