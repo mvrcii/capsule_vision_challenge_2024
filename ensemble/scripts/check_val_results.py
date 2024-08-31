@@ -15,13 +15,16 @@ CheckpointMetadata = namedtuple('CheckpointMetadata', ['rel_path', 'base_name', 
 
 
 def find_files_with_ending(dir, file_only=False, ending='.ckpt'):
-    files = []
+    result_files = []
     for root, dirs, files in os.walk(dir):
         for file in files:
             if file.endswith(ending):
-                files.append(os.path.join(root, file))
-    logging.info(f"Found {len(files)} files with {ending} ending.")
-    return files
+                if file_only:
+                    result_files.append(file)
+                else:
+                    result_files.append(os.path.join(root, file))
+    logging.info(f"Found {len(result_files)} files with {ending} ending.")
+    return result_files
 
 
 def get_base_name(path):
