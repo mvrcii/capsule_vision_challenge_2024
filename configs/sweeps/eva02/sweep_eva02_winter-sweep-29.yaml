@@ -8,7 +8,7 @@ metric:
 parameters:
   # === Model ===
   model_arch:
-    values: [ 'eva02_large_patch14_224.mim_m38m' ]
+    values: [ 'eva02_base_patch14_224.mim_in22k' ]
   model_type:
     values: [ 'seer' ]
 
@@ -53,7 +53,7 @@ parameters:
 
   # === Dataset ===
   dataset_path:
-    values: [ "../data/" ]
+    values: [ "../../JMU/Masterarbeit/data" ]
   dataset_csv_path:
     values: [ "dataset" ]
 

@@ -263,17 +263,17 @@ def arg_parser():
 
     # === Training ===
     parser.add_argument("--seed", default=42, type=int)
-    parser.add_argument("--fold_id", default=0, type=int)
+    parser.add_argument("--fold_id", default=1, type=int)
     parser.add_argument("--max_epochs", default=100, type=int)
     parser.add_argument("--train_bs", default=64, type=int)
     parser.add_argument("--val_bs", default=64, type=int)
-    parser.add_argument("--num_workers", default=16, type=int)
+    parser.add_argument("--num_workers", default=8, type=int)
 
     parser.add_argument("--num_nodes", default=1, type=int)
     parser.add_argument("--num_devices", default=1, type=int)
 
     # === Training Modes ===
-    parser.add_argument("--ft_mode", type=str, choices=[mode.value for mode in FineTuneMode], default='head',
+    parser.add_argument("--ft_mode", type=str, choices=[mode.value for mode in FineTuneMode], default='full',
                         help="Fine-tune mode: 'head' only the head, 'backbone' only the backbone, or 'full' both head and backbone.")
     parser.add_argument("--metric", type=str, choices=['val_mAP_weighted', 'val_AUC_macro', 'val_f1_weighted'],
                         default='val_AUC_macro', help="Metric to optimize for during training.")
@@ -283,11 +283,11 @@ def arg_parser():
     # === Model ===
     parser.add_argument("--model_arch", default="regnety_640.seer", type=str)
     parser.add_argument("--model_type", default="seer", type=str)
-    parser.add_argument("--img_size", default=384, type=int)
+    parser.add_argument("--img_size", default=224, type=int)
 
     # === Optimizer ===
     parser.add_argument("--optimizer", default="adabelief", type=str)
-    parser.add_argument("--lr", default=0.03, type=float)
+    parser.add_argument("--lr", default=1e-6, type=float)
     parser.add_argument("--weight_decay", default=2e-4, type=float)
 
     # === Scheduler ===
