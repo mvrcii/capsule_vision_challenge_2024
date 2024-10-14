@@ -53,7 +53,7 @@ parameters:
 
   # === Dataset ===
   dataset_path:
-    values: [ "../../JMU/Masterarbeit/data" ]
+    values: [ "../data/" ]
   dataset_csv_path:
     values: [ "dataset" ]
 
