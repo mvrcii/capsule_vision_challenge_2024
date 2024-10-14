@@ -55,7 +55,7 @@ parameters:
   dataset_path:
     values: [ "../data/" ]
   dataset_csv_path:
-    values: [ "../endoscopy/data_alpha" ]
+    values: [ "dataset" ]
 
 command:
   - ${env}
