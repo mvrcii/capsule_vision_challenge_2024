@@ -1,7 +1,7 @@
 # Hyperparameters that are project specific can be stored in the project.yaml file.
 wandb_project: "CV2024"
 entity: "wuesuv"
-dataset_csv_path: "dataset"
+dataset_csv_path: "datasets/cvip2024"
 checkpoint_dir: "checkpoints"
 
 pretrained_checkpoint_dir: '../master-thesis/checkpoints'

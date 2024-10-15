@@ -25,4 +25,3 @@ scheduler: lambda
 lambda_factor: 0.95
 
 dataset_path: "../data/"
-dataset_csv_path: "cvip2024"
