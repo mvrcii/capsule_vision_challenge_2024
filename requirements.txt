@@ -14,3 +14,4 @@ PyYAML
 seaborn
 adabelief-pytorch
 torchmetrics
+pandas
