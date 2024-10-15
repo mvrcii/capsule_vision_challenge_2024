@@ -1,5 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
+from enum import Enum
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,15 +10,20 @@ import wandb
 from adabelief_pytorch import AdaBelief
 from lightning import LightningModule
 from matplotlib.colors import TwoSlopeNorm
-from sklearn.metrics import auc, roc_curve
+from sklearn.metrics import roc_curve, auc
 from sklearn.preprocessing import label_binarize
 from torch import nn
 from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR, LambdaLR
 from torchmetrics.classification import MulticlassPrecision, MulticlassRecall, MulticlassF1Score, \
     MulticlassAveragePrecision, MulticlassAUROC, MulticlassConfusionMatrix
 
-from src.models.enums.finetune_mode import FineTuneMode
 from src.models.linear_classifier import LinearClassifier
+
+
+class FineTuneMode(Enum):
+    HEAD = 'head'
+    BACKBONE = 'backbone'
+    FULL = 'full'
 
 
 class AbstractLightningModule(LightningModule, ABC):
@@ -34,7 +40,7 @@ class AbstractLightningModule(LightningModule, ABC):
         self.checkpoint_path = checkpoint_path
         self.verbose = config.verbose
 
-        self.class_mapping = class_to_idx
+        self.class_mapping = class_to_idx  # Maps the class label to its index
         self.class_names = list(class_to_idx.keys())
         self.num_classes = len(self.class_names)
 
@@ -69,7 +75,6 @@ class AbstractLightningModule(LightningModule, ABC):
         pass
 
     def init_classifier(self):
-        logging.info(f"Model: Classifier with {self.num_classes} classes built.")
         return LinearClassifier(in_features=self.backbone.num_features, num_classes=self.num_classes)
 
     def load_checkpoint_weights(self):
@@ -83,6 +88,37 @@ class AbstractLightningModule(LightningModule, ABC):
 
         classifier_state_dict = {k.replace('classifier.', ''): v for k, v in state_dict.items() if 'classifier.' in k}
         self.classifier.load_state_dict(classifier_state_dict, strict=False)
+
+    def __setup_metrics(self):
+        # Weighted Metrics for Overall Performance Evaluation
+        self.precision_weighted = MulticlassPrecision(num_classes=self.num_classes, average="weighted")
+        self.recall_weighted = MulticlassRecall(num_classes=self.num_classes, average="weighted")
+        self.f1_weighted = MulticlassF1Score(num_classes=self.num_classes, average="weighted")
+        self.mAP_weighted = MulticlassAveragePrecision(num_classes=self.num_classes, average="weighted")
+        self.AUC_weighted = MulticlassAUROC(num_classes=self.num_classes, average="weighted")
+
+        # Macro Metrics for Fairness Across Classes
+        self.precision_macro = MulticlassPrecision(num_classes=self.num_classes, average="macro")
+        self.recall_macro = MulticlassRecall(num_classes=self.num_classes, average="macro")
+        self.f1_macro = MulticlassF1Score(num_classes=self.num_classes, average="macro")
+        self.mAP_macro = MulticlassAveragePrecision(num_classes=self.num_classes, average="macro")
+        self.AUC_macro = MulticlassAUROC(num_classes=self.num_classes, average="macro")
+
+        # Per Class Metrics
+        self.f1_per_class = MulticlassF1Score(num_classes=self.num_classes, average=None)
+        self.mAP_per_class = MulticlassAveragePrecision(num_classes=self.num_classes, average=None)
+        self.AUC_per_class = MulticlassAUROC(num_classes=self.num_classes, average=None)
+
+    def configure_optimizers(self):
+        trainable_params = self.get_trainable_params()
+        optimizer = self.create_optimizer(trainable_params)
+
+        if self.config.scheduler == 'constant':
+            return {"optimizer": optimizer}
+
+        scheduler = self.create_scheduler(optimizer)
+
+        return {"optimizer": optimizer, "lr_scheduler": {"scheduler": scheduler, "monitor": self.metric}}
 
     def get_trainable_params(self):
         """Aggregate trainable parameters from different parts of the model."""
@@ -111,16 +147,6 @@ class AbstractLightningModule(LightningModule, ABC):
             return LambdaLR(optimizer, lr_lambda=lambda epoch: self.config.lambda_factor ** (epoch / 2))
         else:
             raise ValueError(f"Invalid scheduler: {self.config.scheduler}")
-
-    def configure_optimizers(self):
-        trainable_params = self.get_trainable_params()
-        optimizer = self.create_optimizer(trainable_params)
-
-        if self.config.scheduler == 'constant':
-            return {"optimizer": optimizer}
-
-        scheduler = self.create_scheduler(optimizer)
-        return {"optimizer": optimizer, "lr_scheduler": {"scheduler": scheduler, "monitor": self.metric}}
 
     def forward(self, x):
         features = self.backbone(x)
@@ -193,40 +219,17 @@ class AbstractLightningModule(LightningModule, ABC):
             param.requires_grad = False
 
         if ft_mode == FineTuneMode.HEAD.value or ft_mode == FineTuneMode.FULL.value:
-            logging.info("Unfreezing head parameters for fine-tuning.")
             for param in self.classifier.parameters():
                 param.requires_grad = True
 
         if ft_mode == FineTuneMode.BACKBONE.value or ft_mode == FineTuneMode.FULL.value:
-            logging.info("Unfreezing backbone parameters for fine-tuning.")
             for param in self.backbone.parameters():
                 param.requires_grad = True
 
-        if self.verbose:
-            logging.info(f"Fine-tuning mode set to: {ft_mode}")
-
-    def __setup_metrics(self):
-        # Weighted Metrics for Overall Performance Evaluation
-        self.precision_weighted = MulticlassPrecision(num_classes=self.num_classes, average="weighted")
-        self.recall_weighted = MulticlassRecall(num_classes=self.num_classes, average="weighted")
-        self.f1_weighted = MulticlassF1Score(num_classes=self.num_classes, average="weighted")
-        self.mAP_weighted = MulticlassAveragePrecision(num_classes=self.num_classes, average="weighted")
-        self.AUC_weighted = MulticlassAUROC(num_classes=self.num_classes, average="weighted")
-
-        # Macro Metrics for Fairness Across Classes
-        self.precision_macro = MulticlassPrecision(num_classes=self.num_classes, average="macro")
-        self.recall_macro = MulticlassRecall(num_classes=self.num_classes, average="macro")
-        self.f1_macro = MulticlassF1Score(num_classes=self.num_classes, average="macro")
-        self.mAP_macro = MulticlassAveragePrecision(num_classes=self.num_classes, average="macro")
-        self.AUC_macro = MulticlassAUROC(num_classes=self.num_classes, average="macro")
-
-        # Per Class Metrics
-        self.f1_per_class = MulticlassF1Score(num_classes=self.num_classes, average=None)
-        self.mAP_per_class = MulticlassAveragePrecision(num_classes=self.num_classes, average=None)
-        self.AUC_per_class = MulticlassAUROC(num_classes=self.num_classes, average=None)
+        logging.info(f"Unfreezing {ft_mode} parameters for fine-tuning.")
 
     def __calc_loss(self, logits, labels, mode='train'):
-        loss = self.criterion(logits, labels)
+        loss = nn.CrossEntropyLoss()(logits, labels)
         self.log(f'{mode}_loss', loss, on_step=False, on_epoch=True, prog_bar=True)
         return loss
 
@@ -370,8 +373,8 @@ class AbstractLightningModule(LightningModule, ABC):
 
         sns.lineplot(x=[0, 1], y=[0, 1], ax=ax1, color="gray", linestyle='--', label='Random Classifier')
         ax1.set_title('ROC Curves for Each Class')
-        ax1.set_xlabel('False Positive Rate (Specificity)')
-        ax1.set_ylabel('True Positive Rate (Sensitivity)')
+        ax1.set_xlabel('FPR (Specificity)')
+        ax1.set_ylabel('TPR (Sensitivity)')
         ax1.legend(loc='lower right', fontsize='small', title_fontsize='medium')
 
         # Calculate and plot the micro-average ROC curve
@@ -388,8 +391,8 @@ class AbstractLightningModule(LightningModule, ABC):
 
         sns.lineplot(x=[0, 1], y=[0, 1], ax=axes[1], color="gray", linestyle='--', label='Random Classifier')
         axes[1].set_title('Macro and Micro-average ROC Curves')
-        axes[1].set_xlabel('False Positive Rate (Specificity)')
-        axes[1].set_ylabel('True Positive Rate (Sensitivity)')
+        axes[1].set_xlabel('FPR (Specificity)')
+        axes[1].set_ylabel('TPR (Sensitivity)')
         axes[1].legend(loc='lower right', fontsize='small', title_fontsize='medium')
         plt.tight_layout()
         wandb.log({f"best_{mode}_roc_curve": wandb.Image(fig)})

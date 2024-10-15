@@ -17,6 +17,8 @@ from src.data.datamodule import DataModule
 from src.models.enums.finetune_mode import FineTuneMode
 from src.models.regnety.regnety import RegNetY
 from src.models.vit.vit import ViT
+
+from src.models.timm.timm_model import TimmModel
 from src.utils.class_mapping import load_class_mapping
 from src.utils.transform_utils import load_transforms
 
@@ -174,6 +176,8 @@ class TrainHandler:
             return RegNetY
         elif model_type == "vit":
             return ViT
+        elif model_type == "timm":
+            return TimmModel
         else:
             raise ValueError(f"Model type {model_type} is not supported.")
 
