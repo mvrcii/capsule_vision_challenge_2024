@@ -1,0 +1,28 @@
+# === Model ===
+model_arch: vgg16.tv_in1k
+model_type: timm
+
+# === Paths ===
+transform_path: "configs/transforms/alpha_transforms.py"
+
+# === Training ===
+max_epochs: 50
+seed: 42
+train_bs: 16
+val_bs: 64
+fold_id: 1
+img_size: 224
+num_workers: 8
+ft_mode: full
+
+# === Optimizer ===
+lr: 1e-6
+optimizer: adabelief
+metric: 'val_AUC_macro'
+
+# === Scheduler ===
+scheduler: lambda
+lambda_factor: 0.95
+
+dataset_path: "../data/"
+dataset_csv_path: "dataset"
