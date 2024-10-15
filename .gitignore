@@ -21,7 +21,6 @@ test_set
 train_and_validation_sets
 cross_val_folds
 
-datasets
 *.pth
 *.ckpt
 *.torch
