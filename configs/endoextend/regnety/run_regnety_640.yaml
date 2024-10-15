@@ -9,4 +9,3 @@ num_workers: 16
 ft_mode: full
 
 checkpoint_filename: "run-20240826_194035-ancient-forest-381/best_epoch92_val_f1_weighted0.84.ckpt"
-transform_path: "configs/transforms/alpha_transforms.py"

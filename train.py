@@ -281,9 +281,9 @@ def arg_parser():
                         help="Directory to load pretrained checkpoints from")
 
     parser.add_argument("--dataset_path", default="../data/", type=str)
-    parser.add_argument("--dataset_csv_path", default="../endoscopy/data_alpha", type=str)
+    parser.add_argument("--dataset_csv_path", type=str)
     parser.add_argument("--class_mapping_filename", default="class_mapping.json", type=str)
-    parser.add_argument("--transform_path", default="configs/transforms/base_transforms.py", type=str)
+    parser.add_argument("--transform_path", default="configs/transforms/alpha_transforms.py", type=str)
 
     # === Training ===
     parser.add_argument("--seed", default=42, type=int)

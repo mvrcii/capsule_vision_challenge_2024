@@ -25,6 +25,3 @@ metric: 'val_AUC_macro'
 # === Scheduler ===
 scheduler: lambda
 lambda_factor: 0.95
-
-dataset_path: "../data/"
-dataset_csv_path: "dataset"

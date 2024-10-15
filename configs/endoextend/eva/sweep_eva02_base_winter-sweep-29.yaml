@@ -16,8 +16,6 @@ parameters:
     values: [ '../master-thesis/checkpoints' ]
   checkpoint_filename:
     values: [ 'sweep-p8wbgkdu/winter-sweep-29_epoch47_val_f1_weighted0.92.ckpt' ]
-  transform_path:
-    values: [ 'configs/transforms/alpha_transforms.py' ]
 
   # === Training ===
   max_epochs:
@@ -50,12 +48,6 @@ parameters:
     values: [ 'lambda' ]
   lambda_factor:
     values: [ 0.95 ]
-
-  # === Dataset ===
-  dataset_path:
-    values: [ "../data/" ]
-  dataset_csv_path:
-    values: [ "dataset" ]
 
 command:
   - ${env}
