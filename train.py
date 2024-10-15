@@ -7,17 +7,16 @@ from typing import Tuple
 
 import albumentations as A
 import torch
+import wandb
 import yaml
 from lightning import Trainer, seed_everything
 from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor, ModelSummary
 from lightning.pytorch.loggers import WandbLogger
 
-import wandb
 from src.data.datamodule import DataModule
-from src.models.enums.finetune_mode import FineTuneMode
+from src.models.abstract_model import FineTuneMode
+from src.models.endovit.endovit import EndoViT
 from src.models.regnety.regnety import RegNetY
-from src.models.vit.vit import ViT
-
 from src.models.timm.timm_model import TimmModel
 from src.utils.class_mapping import load_class_mapping
 from src.utils.transform_utils import load_transforms
@@ -34,11 +33,25 @@ class TrainHandler:
         self.class_mapping = self.data_module.class_to_index
         self.trainer = self.__prepare_trainer(args)
         self.model = self.__prepare_model(args)
+        self.train_loader_only = args.train_loader_only
 
     def train(self):
-        self.trainer.fit(model=self.model, datamodule=self.data_module)
+        train_loader = self.data_module.train_dataloader()
+        val_loader = self.data_module.val_dataloader()
+
+        if train_loader is not None:
+            if self.train_loader_only:
+                self.trainer.fit(model=self.model, train_dataloaders=train_loader)
+            elif val_loader is not None:
+                self.trainer.fit(model=self.model, train_dataloaders=train_loader, val_dataloaders=val_loader)
+            else:
+                raise ValueError("Validation loader is None and 'train_loader_only' is not set to True. "
+                                 "Please provide a validation loader.")
 
     def test(self):
+        if self.data_module.test_dataloader() is None:
+            logging.info("No test dataloader available. Skip testing.")
+            return
         self.trainer.test(model=self.model, dataloaders=self.data_module.test_dataloader(), ckpt_path='best')
 
     @staticmethod
@@ -109,6 +122,7 @@ class TrainHandler:
             logging.info("No CUDA GPUs are available")
 
         train_bs = 64
+
         val_bs = train_bs
 
         # If given, override with the provided batch sizes
@@ -128,7 +142,7 @@ class TrainHandler:
         transforms = TrainHandler.__prepare_transforms(args)
         train_bs, val_bs = TrainHandler.__get_batch_size(args)
 
-        return DataModule(
+        data_module = DataModule(
             class_mapping=class_mapping,
             transforms=transforms,
             train_bs=train_bs,
@@ -138,13 +152,15 @@ class TrainHandler:
             fold_idx=args.fold_id,
             num_workers=args.num_workers,
             train_frac=args.train_frac,
-            val_frac=args.val_frac
+            val_frac=args.val_frac,
+            include_test_in_train=args.include_test_in_train
         )
+        data_module.setup()
+        return data_module
 
     @staticmethod
     def __prepare_class_mapping(args):
-        class_mapping_path = os.path.join(args.dataset_csv_path, args.class_mapping_filename)
-        return load_class_mapping(class_mapping_path)
+        return load_class_mapping(os.path.join(args.dataset_csv_path, args.class_mapping_filename))
 
     def __prepare_trainer(self, args) -> Trainer:
         accelerator = "mps" if torch.backends.mps.is_available() else (
@@ -167,15 +183,15 @@ class TrainHandler:
 
     def __prepare_model(self, config):
         checkpoint_path = TrainHandler.__get_checkpoint_path(config)
-        model_cls = TrainHandler.__get_model_cls(config.model_type)
+        model_cls = TrainHandler.__get_model_cls(config.model_arch, config.model_type)
         return model_cls(config=config, class_to_idx=self.class_mapping, checkpoint_path=checkpoint_path)
 
     @staticmethod
-    def __get_model_cls(model_type):
+    def __get_model_cls(model_arch, model_type):
         if model_type == "seer":
             return RegNetY
-        elif model_type == "vit":
-            return ViT
+        elif model_type == "endovit" or model_arch.lower() == "endovit":
+            return EndoViT
         elif model_type == "timm":
             return TimmModel
         else:
@@ -232,6 +248,8 @@ def main(args):
 
     args = argparse.Namespace(**wandb.config)
 
+    assert args.fold_id in [0, 1, 2, 3], "Fold ID must be in [0, 1, 2, 3]"
+
     logging.basicConfig(
         format='%(levelname)s: %(message)s',
         level=logging.INFO
@@ -239,6 +257,8 @@ def main(args):
 
     trainer = TrainHandler(args)
     trainer.train()
+
+    # TODO: Activate for testing when test.csv is available
     # trainer.test()
 
     wandb.finish()
@@ -271,18 +291,22 @@ def arg_parser():
     parser.add_argument("--max_epochs", default=100, type=int)
     parser.add_argument("--train_bs", default=64, type=int)
     parser.add_argument("--val_bs", default=64, type=int)
-    parser.add_argument("--num_workers", default=8, type=int)
+    parser.add_argument("--num_workers", default=16, type=int)
 
     parser.add_argument("--num_nodes", default=1, type=int)
     parser.add_argument("--num_devices", default=1, type=int)
 
     # === Training Modes ===
     parser.add_argument("--ft_mode", type=str, choices=[mode.value for mode in FineTuneMode], default='full',
-                        help="Fine-tune mode: 'head' only the head, 'backbone' only the backbone, or 'full' both head and backbone.")
+                        help="Fine-tune mode: 'head' only the head, 'backbone' only the backbone, or 'full' both head "
+                             "and backbone.")
     parser.add_argument("--metric", type=str, choices=['val_mAP_weighted', 'val_AUC_macro', 'val_f1_weighted'],
                         default='val_AUC_macro', help="Metric to optimize for during training.")
     parser.add_argument("--train_frac", type=float, default=1, help="Fraction of training data to use")
     parser.add_argument("--val_frac", type=float, default=1, help="Fraction of validation data to use")
+    parser.add_argument("--train_loader_only", action="store_true", help="Train only, no validation (default: false)")
+    parser.add_argument("--include_test_in_train", action="store_true",
+                        help="Include test data in training data (default: false)")
 
     # === Model ===
     parser.add_argument("--model_arch", default="regnety_640.seer", type=str)

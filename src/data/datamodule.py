@@ -1,5 +1,6 @@
 import logging
 import os
+import warnings
 
 import pandas as pd
 import torch
@@ -8,106 +9,69 @@ from torch.utils.data import WeightedRandomSampler, DataLoader
 
 from src.data.dataset import ImageDataset
 
+warnings.filterwarnings("ignore", ".*does not have many workers.*")
+
 
 class DataModule(LightningDataModule):
-    def __init__(self, class_mapping, transforms, train_bs, val_bs, dataset_path, dataset_csv_path, fold_idx=0,
-                 num_workers=8, train_frac=1, val_frac=1):
+    def __init__(self, class_mapping, transforms, train_bs, val_bs, dataset_path, dataset_csv_path: str, fold_idx=0,
+                 num_workers=8, train_frac=1.0, val_frac=1.0, include_test_in_train=False):
         super().__init__()
         self.train_bs, self.val_bs = train_bs, val_bs
+        self.include_test_in_train = include_test_in_train
         self.dataset_path = dataset_path
         self.dataset_csv_path = dataset_csv_path
         self.fold_idx = fold_idx
+        self.num_workers = num_workers
         self.train_frac = train_frac
         self.val_frac = val_frac
-        self.num_workers = num_workers
         self.train_transform, self.val_transform = transforms
 
         self.datasets = {}
         self.class_to_index = class_mapping
         self.sample_weights = []
 
-    def vectorized_path_update(self, dataset):
-        dataset = dataset.copy()
-        dataset.loc[:, 'frame_path'] = dataset['frame_path'].apply(
-            lambda x: os.path.join(self.dataset_path, x).replace('\\', '/'))
-        return dataset
+    def __get_valid_csv_combination(self):
+        file_paths = {
+            'train.csv': os.path.join(self.dataset_csv_path, 'train.csv'),
+            'val.csv': os.path.join(self.dataset_csv_path, 'val.csv'),
+            'train_val.csv': os.path.join(self.dataset_csv_path, 'train_val.csv'),
+            'test.csv': os.path.join(self.dataset_csv_path, 'test.csv')
+        }
 
-    def __load_test_data(self):
-        test_path = os.path.join(self.dataset_csv_path, 'test.csv')
-        if os.path.exists(test_path):
-            X_test = pd.read_csv(test_path)
-            X_test = self.vectorized_path_update(X_test)
-            return X_test
-        return None
+        existing_files = [file for file, path in file_paths.items() if os.path.exists(path)]
 
-    @staticmethod
-    def __balance_classes(df, random_state=42):
-        df = df.copy()
-        class_counts = df['class'].value_counts()
-        # Determine the smallest number of instances among the classes, except the most dominant
-        target_class_size = class_counts.sort_values(ascending=False)[1]  # Index 1 for the second most frequent class
+        supported_file_combinations = [
+            ['train.csv'],
+            ['train.csv', 'val.csv'],
+            ['train_val.csv'],
+        ]
 
-        balanced_df = pd.DataFrame()
+        valid_combinations = supported_file_combinations + [combo + ['test.csv'] for combo in
+                                                            supported_file_combinations]
 
-        for class_value in class_counts.index:
-            class_subset = df[df['class'] == class_value]
-            if class_counts[class_value] > target_class_size:
-                class_subset = class_subset.sample(n=target_class_size, random_state=random_state)
-            balanced_df = pd.concat([balanced_df, class_subset], axis=0)
+        for combination in valid_combinations:
+            if sorted(combination) == sorted(existing_files):
+                return combination
 
-        # Shuffle the DataFrame to avoid any ordering issues later on
-        balanced_df = balanced_df.sample(frac=1, random_state=random_state).reset_index(drop=True)
-        return balanced_df
-
-    def __load_data(self):
-        train_val_path = os.path.join(self.dataset_csv_path, 'train_val.csv')
-
-        X_test = self.__load_test_data()
-
-        X_train_val = pd.read_csv(train_val_path)
-
-        unique_fold_idcs = X_train_val['fold'].unique()
-        val_fold_idx = self.fold_idx
-
-        if val_fold_idx not in unique_fold_idcs:
-            raise ValueError(f"Fold index {val_fold_idx} not found in the available folds: {unique_fold_idcs}")
-
-        train_fold_idcs = unique_fold_idcs[unique_fold_idcs != val_fold_idx]
-
-        X_train = X_train_val[X_train_val['fold'] != self.fold_idx]
-        X_val = X_train_val[X_train_val['fold'] == self.fold_idx]
-
-        if self.train_frac != 1:
-            X_train = X_train.sample(frac=self.train_frac)
-        if self.val_frac != 1:
-            X_val = X_val.sample(frac=self.val_frac)
-
-        logging.info(
-            f"DataModule: Fold(s) {', '.join(map(str, train_fold_idcs))} with {len(X_train)} samples used for training")
-
-        logging.info(f"DataModule: Fold {val_fold_idx} with {len(X_val)} samples used for validation")
-
-        # Apply class balancing
-        # X_train = self.__balance_classes(X_train)
-        # # X_val = self.__balance_classes(X_val)
-        # print('Train Value Counts:', X_train['class'].value_counts())
-
-        # Apply the optimized path update
-        X_train = self.vectorized_path_update(X_train)
-        X_val = self.vectorized_path_update(X_val)
-
-        return X_train, X_val, X_test
+        raise ValueError(f"Invalid file combination: {existing_files}. "
+                         f"Supported combinations are {supported_file_combinations} with optional 'test.csv'.")
 
     def setup(self, stage=None):
-        X_train, X_val, X_test = self.__load_data()
+        csv_files = self.__get_valid_csv_combination()
 
-        self.datasets = {
-            'train': ImageDataset(X_train, self.class_to_index, self.train_transform),
-            'val': ImageDataset(X_val, self.class_to_index, self.val_transform),
-        }
-        if X_test is not None:
-            self.datasets['test'] = ImageDataset(X_test, self.class_to_index, self.val_transform)
-        self.calculate_inverse_weights(X_train)
+        datasets = self.__load_data(csv_files)
+
+        X_train = datasets.get('train', None)
+        if X_train is not None:
+            self.calculate_inverse_weights(X_train)
+
+        for key, value in datasets.items():
+            transform = self.train_transform if key == 'train' else self.val_transform
+            datasets[key] = ImageDataset(value, self.class_to_index, transform)
+
+        self.datasets = datasets
+
+        self.__setup_dataloader_args()
 
     def calculate_inverse_weights(self, df):
         class_counts = df['class'].value_counts()
@@ -115,14 +79,87 @@ class DataModule(LightningDataModule):
         self.sample_weights = torch.tensor(df['class'].map(inverse_weights).values, dtype=torch.double)
 
     def train_dataloader(self):
+        if self.datasets.get('train', None) is None:
+            logging.info("Training dataset was requested but is not available.")
+            return None
         sampler = WeightedRandomSampler(self.sample_weights, num_samples=len(self.datasets['train']))
         return DataLoader(self.datasets['train'], batch_size=self.train_bs, sampler=sampler, drop_last=True,
-                          pin_memory=True, num_workers=self.num_workers)
+                          prefetch_factor=self.prefetch_factor, persistent_workers=self.persistent_workers,
+                          num_workers=self.num_workers, pin_memory=self.pin_memory)
 
     def val_dataloader(self):
-        return DataLoader(self.datasets['val'], drop_last=True, pin_memory=True, batch_size=self.val_bs,
-                          num_workers=self.num_workers)
+        if self.datasets.get('val', None) is None:
+            logging.info("Validation dataset was requested but is not available.")
+            return None
+        return DataLoader(self.datasets['val'], drop_last=True, batch_size=self.val_bs, num_workers=self.num_workers,
+                          prefetch_factor=self.prefetch_factor, persistent_workers=self.persistent_workers,
+                          pin_memory=self.pin_memory)
 
     def test_dataloader(self):
-        return DataLoader(self.datasets['test'], drop_last=True, pin_memory=True, batch_size=self.val_bs,
-                          num_workers=self.num_workers)
+        if self.datasets.get('test', None) is None:
+            logging.info("Test dataset was requested but is not available.")
+            return None
+        return DataLoader(self.datasets['test'], drop_last=True, batch_size=self.val_bs, num_workers=self.num_workers,
+                          prefetch_factor=self.prefetch_factor, persistent_workers=self.persistent_workers,
+                          pin_memory=self.pin_memory)
+
+    def __setup_dataloader_args(self):
+        on_local_device = self.num_workers == 0
+        self.prefetch_factor = None if on_local_device else 2
+        self.persistent_workers = False if on_local_device else True
+        self.pin_memory = False if on_local_device else True
+
+    def __load_data(self, csv_files):
+        def vectorized_path_update(dataset):
+            dataset = dataset.copy()
+            dataset.loc[:, 'frame_path'] = dataset['frame_path'].apply(
+                lambda x: os.path.join(self.dataset_path, x).replace('\\', '/'))
+            return dataset
+
+        if ('train.csv' in csv_files and 'train_val.csv' in csv_files) or (
+                'val.csv' in csv_files and 'train_val.csv' in csv_files):
+            raise ValueError("Either 'train.csv' or 'val.csv' cannot be used together with 'train_val.csv'")
+
+        datasets = {}
+        for filename in csv_files:
+            data_path = os.path.join(self.dataset_csv_path, filename)
+            data = pd.read_csv(data_path)
+
+            if filename == 'train.csv':
+                X_train = data.sample(frac=self.train_frac)
+                X_train = vectorized_path_update(X_train)
+                datasets['train'] = X_train
+            elif filename == 'val.csv':
+                X_val = data.sample(frac=self.val_frac)
+                X_val = vectorized_path_update(X_val)
+                datasets['val'] = X_val
+            elif filename == 'train_val.csv':
+                # Parse K-Fold Split
+                if self.fold_idx is None:
+                    raise ValueError("Fold index must be provided for train_val.csv")
+                logging.info(f"Using fold {self.fold_idx} for validation.")
+                X_train = data[data['fold'] != self.fold_idx]
+                X_train = X_train.sample(frac=self.train_frac)
+                X_val = data[data['fold'] == self.fold_idx]
+                X_val = X_val.sample(frac=self.train_frac)
+                datasets['train'] = X_train
+                datasets['val'] = X_val
+            elif filename == 'test.csv':
+                X_test = data
+                datasets['test'] = X_test
+            else:
+                raise ValueError(f"Invalid filename: {filename}")
+
+        # Conditionally merge test data into train data
+        if self.include_test_in_train and 'test' in datasets and 'train' in datasets:
+            X_train = datasets['train']
+            X_test = datasets['test']
+            datasets['train'] = pd.concat([X_train, X_test])
+            logging.info(f"Merged Test data into Train: New Train Size: {len(datasets['train'])}")
+            del datasets['test']
+
+        for key, value in datasets.items():
+            datasets[key] = vectorized_path_update(value)
+            logging.info(f"{key.capitalize()} Size: {len(value)}")
+
+        return datasets
