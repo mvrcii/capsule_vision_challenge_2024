@@ -1,7 +1,6 @@
 import logging
 
 import timm
-import torch
 
 from src.models.abstract_model import AbstractLightningModule
 
