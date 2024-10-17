@@ -263,7 +263,7 @@ class AbstractLightningModule(LightningModule, ABC):
         self.log(f'{mode}_f1_weighted', self.f1_weighted(preds, labels), on_epoch=True, prog_bar=False)
 
         self.log(f'{mode}_precision_macro', self.precision_macro(preds, labels), on_epoch=True, prog_bar=False)
-        self.log(f'{mode}_recall_macro', self.recall_macro(preds, labels), on_epoch=True, prog_bar=False)
+        self.log(f'{mode}_recall_macro', self.recall_macro(preds, labels), on_epoch=True, prog_bar=True)
         self.log(f'{mode}_f1_macro', self.f1_macro(preds, labels), on_epoch=True, prog_bar=False)
 
     def __store_step_preds(self, preds, labels, mode):
@@ -279,10 +279,10 @@ class AbstractLightningModule(LightningModule, ABC):
         preds = torch.tensor(preds, dtype=torch.float16)
 
         # Log weighted and macro metrics that are computed over the epoch
-        self.log(f"{mode}_mAP_weighted", self.mAP_weighted(preds, labels), on_step=False, on_epoch=True, prog_bar=True)
-        self.log(f"{mode}_AUC_weighted", self.AUC_weighted(preds, labels), on_step=False, on_epoch=True, prog_bar=True)
+        self.log(f"{mode}_mAP_weighted", self.mAP_weighted(preds, labels), on_step=False, on_epoch=True, prog_bar=False)
+        self.log(f"{mode}_AUC_weighted", self.AUC_weighted(preds, labels), on_step=False, on_epoch=True, prog_bar=False)
 
-        self.log(f"{mode}_mAP_macro", self.mAP_macro(preds, labels), on_step=False, on_epoch=True, prog_bar=False)
+        self.log(f"{mode}_mAP_macro", self.mAP_macro(preds, labels), on_step=False, on_epoch=True, prog_bar=True)
         self.log(f"{mode}_AUC_macro", self.AUC_macro(preds, labels), on_step=False, on_epoch=True, prog_bar=True)
 
         # Per-Class metrics logging
