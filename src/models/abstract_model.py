@@ -85,9 +85,30 @@ class AbstractLightningModule(LightningModule, ABC):
 
         backbone_state_dict = {k.replace('backbone.', ''): v for k, v in state_dict.items() if 'backbone.' in k}
         self.backbone.load_state_dict(backbone_state_dict, strict=False)
+        logging.info("Backbone weights loaded successfully.")
 
-        classifier_state_dict = {k.replace('classifier.', ''): v for k, v in state_dict.items() if 'classifier.' in k}
-        self.classifier.load_state_dict(classifier_state_dict, strict=False)
+        classifier_state_dict = {k.replace('classifier.', ''): v for k, v in state_dict.items() if
+                                 k.startswith('classifier.')}
+        current_classifier_state_dict = self.classifier.state_dict()
+
+        if self.is_state_dict_compatible(current_classifier_state_dict, classifier_state_dict):
+            self.classifier.load_state_dict(classifier_state_dict, strict=False)
+            logging.info("Classifier weights loaded successfully.")
+        else:
+            logging.warning("Classifier dimensions do not match. Keeping the fresh classifier weights.")
+
+    @staticmethod
+    def __is_state_dict_compatible(current_sd, loaded_sd):
+        for key in loaded_sd:
+            if key not in current_sd:
+                logging.warning(f"Key '{key}' from checkpoint not found in current classifier.")
+                return False
+            if loaded_sd[key].size() != current_sd[key].size():
+                logging.warning(f"Size mismatch for '{key}': "
+                                f"checkpoint has {loaded_sd[key].size()}, "
+                                f"current model has {current_sd[key].size()}.")
+                return False
+        return True
 
     def __setup_metrics(self):
         # Weighted Metrics for Overall Performance Evaluation
