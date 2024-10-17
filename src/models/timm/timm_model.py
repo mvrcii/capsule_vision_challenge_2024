@@ -18,10 +18,4 @@ class TimmModel(AbstractLightningModule):
             num_classes=0  # No head/classifier
         )
 
-        # Load from checkpoint if path is provided
-        if self.checkpoint_path:
-            logging.info(f"Loading weights from checkpoint: {self.checkpoint_path}")
-            checkpoint = torch.load(self.checkpoint_path)
-            model.load_state_dict(checkpoint['state_dict'])
-
         return model
