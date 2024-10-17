@@ -98,7 +98,7 @@ class AbstractLightningModule(LightningModule, ABC):
             logging.warning("Classifier dimensions do not match. Keeping the fresh classifier weights.")
 
     @staticmethod
-    def __is_state_dict_compatible(current_sd, loaded_sd):
+    def is_state_dict_compatible(current_sd, loaded_sd):
         for key in loaded_sd:
             if key not in current_sd:
                 logging.warning(f"Key '{key}' from checkpoint not found in current classifier.")
