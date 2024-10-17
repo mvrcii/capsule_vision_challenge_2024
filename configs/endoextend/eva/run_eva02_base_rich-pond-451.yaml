@@ -1,0 +1,26 @@
+# === Model ===
+model_arch: eva02_base_patch14_224.mim_in22k
+model_type: timm
+
+# === Paths ===
+checkpoint_filename: run-20241016_212914-rich-pond-451/best_epoch45_val_recall_macro0.73.ckpt
+transform_path: "configs/transforms/alpha_transforms.py"
+
+# === Training ===
+max_epochs: 50
+seed: 42
+train_bs: 16
+val_bs: 64
+fold_id: 0
+img_size: 224
+num_workers: 8
+ft_mode: full
+
+# === Optimizer ===
+lr: 1e-6
+optimizer: adabelief
+metric: 'val_recall_macro'
+
+# === Scheduler ===
+scheduler: lambda
+lambda_factor: 0.95
