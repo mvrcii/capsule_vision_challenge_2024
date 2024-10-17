@@ -7,6 +7,6 @@ checkpoint_dir: "checkpoints"
 pretrained_checkpoint_dir: '../master-thesis/checkpoints'
 
 dataset_path: "../data/"
-dataset_csv_path: "datasets/cvip2024"
+dataset_csv_path: "../endoscopy/datasets/cvip2024"
 
 transform_path: 'configs/transforms/alpha_transforms.py'
