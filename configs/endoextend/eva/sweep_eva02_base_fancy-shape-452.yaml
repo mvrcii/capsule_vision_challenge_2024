@@ -13,7 +13,7 @@ parameters:
     values: [ 'timm' ]
 
   checkpoint_filename:
-    values: [ run-20241017_190933-fancy-shape-452/best_epoch32_val_recall_macro0.81.ckpt' ]
+    values: [ 'run-20241017_190933-fancy-shape-452/best_epoch32_val_recall_macro0.81.ckpt' ]
 
   # === Training ===
   max_epochs:
