@@ -9,7 +9,7 @@ transform_path: "configs/transforms/alpha_transforms.py"
 # === Training ===
 max_epochs: 50
 seed: 42
-train_bs: 128
+train_bs: 64
 val_bs: 128
 fold_id: 0
 img_size: 224
@@ -17,7 +17,7 @@ num_workers: 8
 ft_mode: full
 
 # === Optimizer ===
-lr: 1e-6
+lr: 1e-4
 optimizer: adabelief
 metric: 'val_recall_macro'
 
