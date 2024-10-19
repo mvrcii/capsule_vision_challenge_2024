@@ -5,6 +5,7 @@ import warnings
 import pandas as pd
 import torch
 from lightning import LightningDataModule
+from sklearn.preprocessing import LabelEncoder
 from torch.utils.data import WeightedRandomSampler, DataLoader
 
 from src.data.dataset import ImageDataset
@@ -30,7 +31,7 @@ class DataModule(LightningDataModule):
         self.class_to_index = class_mapping
         self.sample_weights = []
 
-    def __get_valid_csv_combination(self):
+    def __get_csv_filepaths(self):
         file_paths = {
             'train.csv': os.path.join(self.dataset_csv_path, 'train.csv'),
             'val.csv': os.path.join(self.dataset_csv_path, 'val.csv'),
@@ -57,17 +58,17 @@ class DataModule(LightningDataModule):
                          f"Supported combinations are {supported_file_combinations} with optional 'test.csv'.")
 
     def setup(self, stage=None):
-        csv_files = self.__get_valid_csv_combination()
+        csv_files = self.__get_csv_filepaths()
 
         datasets = self.__load_data(csv_files)
 
         X_train = datasets.get('train', None)
-        if X_train is not None:
-            self.calculate_inverse_weights(X_train)
+        if X_train: self.calculate_inverse_weights(X_train)
 
-        for key, value in datasets.items():
+        for key, df in datasets.items():
             transform = self.train_transform if key == 'train' else self.val_transform
-            datasets[key] = ImageDataset(value, self.class_to_index, transform)
+            label_encoder = None if key == 'test' else LabelEncoder()
+            datasets[key] = ImageDataset(df=df, transform=transform, label_encoder=label_encoder)
 
         self.datasets = datasets
 
