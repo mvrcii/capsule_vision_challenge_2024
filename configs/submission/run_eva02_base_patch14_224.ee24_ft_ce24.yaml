@@ -1,0 +1,31 @@
+# === Model ===
+model_arch: eva02_base_patch14_224.pt_ee24
+model_type: timm
+
+# === WandB ===
+wandb_project: "CV2024"
+entity: "wuesuv"
+
+# === Paths ===
+dataset_path: "../data/"  # Change to data dir containing 'training', 'validation' and 'testing' folders
+dataset_csv_path: "datasets/ce24"
+transform_path: "configs/transforms/base_transforms.py"
+
+# === Training ===
+max_epochs: 50
+seed: 42
+train_bs: 128
+val_bs: 128
+fold_id: 0
+img_size: 224
+num_workers: 8
+ft_mode: full
+
+# === Optimizer ===
+lr: 1e-6
+optimizer: adabelief
+metric: 'val_recall_macro'
+
+# === Scheduler ===
+scheduler: lambda
+lambda_factor: 0.95
