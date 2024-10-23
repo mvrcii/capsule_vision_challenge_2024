@@ -32,6 +32,78 @@ For the **Capsule Endoscopy 2024 Challenge**, we leveraged our flexible class ma
 </p>
 
 ## Evaluation Results
+We report the following results:
+
+<table style="width:100%; border-collapse: collapse;">
+  <caption style="caption-side: top; font-weight: bold;">
+    Performance of our final eva02-base model after pre-training and on the final downstream task of training on CE24, compared to our best baseline model during pre-training and to the baseline results reported for various architectures by the CE24 team. Accuracy (Acc) refers to the balanced accuracy, F1, AUC, and mAP are reported as macro average.
+  </caption>
+  <thead>
+    <tr>
+      <th></th>
+      <th>Model</th>
+      <th>Acc</th>
+      <th>AUC</th>
+      <th>F1</th>
+      <th>mAP</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="2"><strong>Pre-Training</strong></td>
+      <td>eva02-base</td>
+      <td><strong>0.810</strong></td>
+      <td><strong>0.976</strong></td>
+      <td><strong>0.786</strong></td>
+      <td><strong>0.860</strong></td>
+    </tr>
+    <tr>
+      <td>SEER</td>
+      <td>0.743</td>
+      <td>0.960</td>
+      <td>0.723</td>
+      <td>0.755</td>
+    </tr>
+    <tr>
+      <td rowspan="5"><strong>Downstream</strong></td>
+      <td>eva02-base <em>(ours)</em></td>
+      <td><strong>0.893</strong></td>
+      <td><strong>0.993</strong></td>
+      <td><strong>0.875</strong></td>
+      <td><strong>0.931</strong></td>
+    </tr>
+    <tr>
+      <td>VGG16</td>
+      <td>0.568</td>
+      <td>0.916</td>
+      <td>0.484</td>
+      <td>0.525</td>
+    </tr>
+    <tr>
+      <td>SVM</td>
+      <td>0.410</td>
+      <td>0.940</td>
+      <td>0.490</td>
+      <td>N/A</td>
+    </tr>
+    <tr>
+      <td>ResNet50</td>
+      <td>0.320</td>
+      <td>0.871</td>
+      <td>0.370</td>
+      <td>N/A</td>
+    </tr>
+    <tr>
+      <td>Custom CNN</td>
+      <td>0.100</td>
+      <td>N/A</td>
+      <td>0.090</td>
+      <td>N/A</td>
+    </tr>
+  </tbody>
+</table>
+
+
 <p align="center">
    <img src="assets/val_conf_mat.png" width="80%">
 </p>
@@ -48,7 +120,7 @@ For the **Capsule Endoscopy 2024 Challenge**, we leveraged our flexible class ma
 
 
 
-## Quickstart
+## Usage
 
 1. Create a Virtual Environment with Python 3.11 via ```python3.11 -m venv venv``` and activate
    it ```source venv/bin/activate```
