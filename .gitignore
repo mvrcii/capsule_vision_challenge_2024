@@ -17,7 +17,7 @@ venv/
 .DS_Store
 lightning_logs
 
-logs
+logs/
 
 # data
 test_set
