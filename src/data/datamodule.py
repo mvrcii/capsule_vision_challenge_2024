@@ -63,7 +63,8 @@ class DataModule(LightningDataModule):
         datasets = self.__load_data(csv_files)
 
         X_train = datasets.get('train', None)
-        if X_train: self.calculate_inverse_weights(X_train)
+        if X_train is not None and not X_train.empty:
+            self.calculate_inverse_weights(X_train)
 
         for key, df in datasets.items():
             transform = self.train_transform if key == 'train' else self.val_transform
