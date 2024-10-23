@@ -18,7 +18,9 @@ Video capsule endoscopy has transformed gastrointestinal endoscopy (GIE) diagnos
 ---
 
 # EndoExtend24
-<img src="assets/endoextend24.png" alt="EndoExtend Datasets" width="80%">
+<p align="center">
+   <img src="assets/endoextend24.png" alt="EndoExtend Datasets" width="80%">
+</p>
 
 
 ## Quickstart
