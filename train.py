@@ -240,8 +240,6 @@ def main(args):
 
     args = argparse.Namespace(**wandb.config)
 
-    assert args.fold_id in [0, 1, 2, 3], "Fold ID must be in [0, 1, 2, 3]"
-
     logging.basicConfig(
         format='%(levelname)s: %(message)s',
         level=logging.INFO

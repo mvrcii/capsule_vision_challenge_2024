@@ -22,7 +22,7 @@ max_epochs: 50
 seed: 42
 train_bs: 128
 val_bs: 128
-fold_id: 0
+fold_id: 0 # Fold 0 is used for validation and fold 1 for training (see train_val.csv)
 img_size: 224
 num_workers: 8
 ft_mode: full
