@@ -7,12 +7,12 @@ wandb_project: "CV2024"
 entity: "wuesuv"
 
 # === Dataset Paths ===
-dataset_path: "data/"  # Change to data dir containing the 'training', 'validation' and 'testing' folders
+dataset_path: "../../JMU/Masterarbeit/data/"
 dataset_csv_path: "datasets/ce24"
 
 # === Checkpoints ===
 pretrained_checkpoint_dir: "pretrained_models/"
-checkpoint_filename: "eva02_base_patch14_224.pt_ee24.ckpt"
+checkpoint_filename: "eva02_base_patch14_224.ee24_ft_ce24.ckpt"
 
 # === Transforms ===
 transform_path: "configs/transforms/base_transforms.py"
