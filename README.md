@@ -1,46 +1,25 @@
-<div style="text-align: center; margin-bottom: 2rem; font-family: 'Times New Roman', Times, serif; font-size: 17px">
-   <h1>
-      Domain-Adaptive Pre-training of Self-Supervised Foundation Models for Medical Image Classification in Gastrointestinal Endoscopy
-   </h1>
-</div>
-
+# Domain-Adaptive Pre-training of Self-Supervised Foundation Models for Medical Image Classification in Gastrointestinal Endoscopy
 
 -------------------
 
+**Authors:** Marcel Roth, Micha V. Nowak, Dr. Adrian Krenzer, Prof. Dr. Frank Puppe
 
-<div style="text-align: center; font-family: 'Times New Roman', Times, serif; font-size: 20px">
-
-<b>Authors:</b> Marcel Roth, Micha V. Nowak, Dr. Adrian Krenzer, Prof. Dr. Frank Puppe
-
-</div>
-
-<div style="display: flex; justify-content: center; font-family: 'Courier New', Courier, monospace; font-size: 16px; max-width: 800px; margin: auto;">
-  <pre>
+```
 @article{roth2024domain,
   title={Domain-Adaptive Pre-training of Self-Supervised Foundation Models for Medical Image Classification in Gastrointestinal Endoscopy},
   author={Marcel Roth, Micha V. Nowak, Dr. Adrian Krenzer, Prof. Dr. Frank Puppe},
   journal={arXiv preprint arXiv:XXXXXXX},
   year={2024}
 }
-  </pre>
-</div>
+```
 
-
-<p style="text-align: justify; max-width: 800px; margin: auto; font-family: 'Times New Roman', Times, serif; font-size: 24px; line-height: 30px">
-Video capsule endoscopy (VCE) has revolutionized gastrointestinal endoscopy (GIE) diagnostics by providing a non-invasive way to capture high-resolution images of the GI tract, facilitating early detection of various diseases. Additionally, it significantly improves accessibility, as it can be deployed in areas with limited medical infrastructure and enables remote diagnostics.
-However, a key limitation of this technology is the massive volume of data generated - often exceeding 1 million frames over the course of a 6-8 hour procedure - making manual analysis infeasible and necessitating the development of automated solutions. Current medical image analysis models face challenges due to the variability in image quality, the requirement for expert annotations, and the lack of large, high-quality labeled datasets. To address these challenges, we introduce EndoExtend24, a novel, large-scale gastrointestinal endoscopy dataset comprising over 226,000 labeled images. This dataset is constructed by merging and re-stratifying the train/test splits of ten existing public and private datasets, ensuring no patient data overlap between splits. The dataset includes dynamic class mappings that accommodate variations in labeling granularity across the original datasets, supporting up to 123 distinct pathological findings. 
-<br><br>
-<p style="text-align: justify; max-width: 800px; margin: auto; font-family: 'Times New Roman', Times, serif; font-size: 24px; line-height: 30px">
-We further propose leveraging the EVA-02 model, a vision transformer pretrained on ImageNet-22k with masked image modeling (MIM) using EVA-CLIP as a teacher model, for domain adaptation in GIE diagnostics. The EVA-02 model incorporates advanced architectural features like SwiGLU activations, Rotary Position Embeddings (ROPE), and additional Layer Normalization (LN) in its MLP layers. Pretraining the EVA-02 model on the EndoExtend24 dataset allows it to learn domain-specific features, before being fine-tuned on the Capsule Endoscopy 2024 (CE24) Challenge dataset. Our experimental results demonstrate the effectiveness of this approach, achieving an AUC Macro score of <b>0.993</b> and a balanced accuracy of <b>89.3%</b> on the challenge validation set.
-</p>
+## Abstract
+Video capsule endoscopy has transformed gastrointestinal endoscopy (GIE) diagnostics by offering a non-invasive method for capturing detailed images of the gastrointestinal tract, enabling early disease detection. However, its potential is limited by the sheer volume of images generated during the imaging procedure, which can take anywhere from 6-8 hours and often produce up to 1 million images, necessitating automated analysis. Additionally, the variability of these images, combined with the need for expert annotations and the scarcity of large, high-quality labeled datasets, constrains the effectiveness of current medical image analysis models. To address this, we introduce a novel large gastrointestinal endoscopy dataset, called EndoExtend24, created by merging and re-stratifying the train/test splits of ten existing public and private datasets, ensuring no overlap of patient data across splits. EndoExtend24 includes over 226,000 labeled images, as well as dynamic class mappings, which allow unified training across datasets with differing labeling granularity, supporting up to 123 distinct pathological findings. Further, we propose to leverage domain adaptive pre-training of foundation models in computer vision trained with self-supervision on generic image data, to adapt them to the task of GIE medical diagnosis. Specifically, the EVA-02 model, which is based on the vision transformer architecture and was trained on ImageNet-22k with masked image modeling (using EVA-CLIP as a MIM teacher), is pre-trained on the novel EndoExtend24 dataset to achieve domain adaptation, and finally trained on the Capsule Endoscopy 2024 Challenge dataset. Experimental results show promising results on the challenge validation set, with an AUC Macro score of **0.993** and a balanced accuracy of **89.3%**.
 
 ---
 
-<div style="text-align: center; margin-bottom: 2rem; font-family: 'Times New Roman', Times, serif;">
-   <h1>EndoExtend24</h1>
-   <img src="assets/endoextend24.png" alt="EndoExtend Datasets" width="80%">
-</div>
-
+# EndoExtend24
+<img src="assets/endoextend24.png" alt="EndoExtend Datasets" width="80%">
 
 
 ## Quickstart
