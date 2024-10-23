@@ -7,7 +7,7 @@ wandb_project: "CV2024"
 entity: "wuesuv"
 
 # === Dataset Paths ===
-dataset_path: "../data/"  # Change to data dir containing the 'training', 'validation' and 'testing' folders
+dataset_path: "data/"  # Change to data dir containing the 'training', 'validation' and 'testing' folders
 dataset_csv_path: "datasets/ce24"
 
 # === Checkpoints ===
