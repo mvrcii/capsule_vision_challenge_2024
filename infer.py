@@ -1,6 +1,10 @@
 import argparse
 import logging
 import os
+
+from tqdm import tqdm
+
+os.environ['NO_ALBUMENTATIONS_UPDATE'] = '1'
 import warnings
 
 import numpy as np
@@ -8,14 +12,13 @@ import pandas as pd
 import torch
 import yaml
 
-import wandb
-
 from src.data.dataset import ImageDataset
 from src.models.timm.timm_model import TimmModel
 from src.utils.class_mapping import load_class_mapping
 from src.utils.transform_utils import load_transforms
 
 warnings.filterwarnings("ignore", ".*A new version of Albumentations is*")
+warnings.filterwarnings("ignore", message=".*Torch was not compiled with flash attention.*")
 
 
 def save_predictions_to_excel(image_paths, y_pred, output_path):
@@ -35,7 +38,7 @@ def prepare_model(ckpt_path, config, class_to_idx):
     """Load the model from the checkpoint."""
     if not ckpt_path:
         raise ValueError("Checkpoint path not provided")
-    print(f"Loading model from checkpoint: {ckpt_path}")
+    logging.info(f"Loading model from checkpoint: {ckpt_path}")
     model = TimmModel.load_from_checkpoint(
         checkpoint_path=ckpt_path,
         config=config,
@@ -87,6 +90,8 @@ def main(args):
 
     config = argparse.Namespace(**vars(args))
 
+    config.ft_mode = None
+
     class_mapping = load_class_mapping(os.path.join(config.dataset_csv_path, 'class_mapping.json'))
 
     _, val_transforms = load_transforms(img_size=config.img_size, transform_path=config.transform_path)
@@ -113,8 +118,10 @@ def main(args):
     batch_size = 8
     num_batches = (len(test_dataset) // batch_size) + 1
 
+    logging.info(f"Predicting on {len(test_dataset)} images in {num_batches} batches")
+
     preds = []
-    for batch_num in range(1, num_batches + 1):
+    for batch_num in tqdm(range(1, num_batches + 1), desc="Processing Batches", unit="batch"):
         current_start_idx = (batch_num - 1) * batch_size
 
         images = get_image_batch(test_dataset, start_idx=current_start_idx, batch_size=batch_size)
@@ -135,16 +142,16 @@ def main(args):
     os.makedirs('submission', exist_ok=True)
     img_paths = test_df['proposed_name'].values
 
-    save_predictions_to_excel(image_paths=img_paths, y_pred=preds, output_path=f'{config.save_dir}/prediction.xlsx')
+    os.makedirs(config.save_dir, exist_ok=True)
+    output_path = f'{config.save_dir}/prediction.xlsx'
+
+    save_predictions_to_excel(image_paths=img_paths, y_pred=preds, output_path=output_path)
 
 
 if __name__ == '__main__':
-    warnings.filterwarnings("ignore", message=".*Torch was not compiled with flash attention.*")
-    os.environ['NO_ALBUMENTATIONS_UPDATE'] = '1'
-
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--config", type=str, help="Path to configuration file")
-    parser.add_argument("--save_dir", type=str, help="Directory to save the prediction.xlsx file")
+    parser.add_argument("--save_dir", type=str, required=True, help="Directory to save the prediction.xlsx file")
     parser.add_argument("--verbose", action="store_true")
     # === Paths ===
     parser.add_argument("--checkpoint_filename", type=str)
@@ -167,5 +174,12 @@ if __name__ == '__main__':
     parser.add_argument("--lambda_factor", type=float, help="Lambda for the scheduler")
 
     arguments = parser.parse_args()
+
+    # Initialize logging
+    log_format = "%(asctime)s - %(levelname)s - %(message)s"
+    logging.basicConfig(level=logging.INFO, format=log_format)
+
+    if arguments.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
 
     main(arguments)
