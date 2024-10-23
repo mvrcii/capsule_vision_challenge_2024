@@ -1,17 +1,23 @@
 # === Model ===
-model_arch: eva02_base_patch14_224.pt_ee24
+model_arch: eva02_base_patch14_224.mim_in22k
 model_type: timm
 
 # === WandB ===
 wandb_project: "CV2024"
 entity: "wuesuv"
 
-# === Paths ===
-dataset_path: "../data/"  # Change to data dir containing 'training', 'validation' and 'testing' folders
+# === Dataset Paths ===
+dataset_path: "../data/"  # Change to data dir containing the 'training', 'validation' and 'testing' folders
 dataset_csv_path: "datasets/ce24"
+
+# === Checkpoints ===
+pretrained_checkpoint_dir: "pretrained_models/"
+checkpoint_filename: "eva02_base_patch14_224.pt_ee24.ckpt"
+
+# === Transforms ===
 transform_path: "configs/transforms/base_transforms.py"
 
-# === Training ===
+# === Training Parameters ===
 max_epochs: 50
 seed: 42
 train_bs: 128
