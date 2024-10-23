@@ -76,7 +76,9 @@ class DataModule(LightningDataModule):
 
     def calculate_inverse_weights(self, df):
         class_counts = df['class'].value_counts()
+        print(class_counts)
         inverse_weights = 1 / class_counts
+        print(inverse_weights)
         self.sample_weights = torch.tensor(df['class'].map(inverse_weights).values, dtype=torch.double)
 
     def train_dataloader(self):
