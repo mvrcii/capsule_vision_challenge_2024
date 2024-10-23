@@ -250,9 +250,6 @@ def main(args):
     trainer = TrainHandler(args)
     trainer.train()
 
-    # TODO: Activate for testing when test.csv is available
-    # trainer.test()
-
     wandb.finish()
 
 
