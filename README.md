@@ -1,7 +1,7 @@
 # Capsule Vision Challenge 2024
 
 ## Quickstart
-1. Create a new virtual environment with Python 3.11 (preferably with venv)
+1. Create a new virtual environment with Python 3.11 (preferably with venv): `python3.11 -m venv env`
 2. Install required packages with `pip install -r requirements.txt`
 3. Download the Capsule Vision Challenge 2024 dataset from the [official website](https://capsule.vision/challenge/2024) and store it in the `data/` directory in the root of the repository
 4. Download the pre-trained model weights via link or command and store them in the `pretrained_models/` directory
