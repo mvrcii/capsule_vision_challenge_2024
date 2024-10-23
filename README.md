@@ -22,23 +22,25 @@ We introduce **EndoExtend24**, a large-scale,
 multi-class GIE dataset comprising over 226,000 labeled images sourced from ten public and private datasets. EndoExtend24 is designed to support deep learning research in GIE by overcoming issues related to _data scarcity_, _inconsistent terminology standards_, _data leakage_ and _split flexibility_. Dataset characteristics are as follows:
 
 <p align="center">
-   <img src="assets/endoextend24.png" width="90%">
+   <img src="assets/endoextend24.png" width="80%">
 </p>
 
 For the **Capsule Endoscopy 2024 Challenge**, we leveraged our flexible class mapping feature and created a specific **EndoExtend24** subset for our pre-training. This subset includes approximately 130,000 labeled images across 10 classes. The additional **EndoExtend24** dataset significantly increases the number of samples in the `bleeding`, `ulcer`, and `polyp` classes. Moreover, we added 201 samples to the rare `worms` class, sourced from the ERS dataset.
 
 <p align="center">
-   <img src="assets/dataset_class_dist_conf_mat.png" width="90%">
+   <img src="assets/dataset_class_dist_conf_mat.png" width="80%">
 </p>
 
 ## Evaluation Results
 <p align="center">
-   <img src="assets/val_conf_mat.png" width="90%">
+   <img src="assets/val_conf_mat.png" width="80%">
 </p>
 <p align="center">
-   <img src="assets/val_roc_curve.png" width="90%">
+   <img src="assets/val_roc_curve_1.png" width="80%">
 </p>
-
+<p align="center">
+   <img src="assets/val_roc_curve_1.png" width="80%">
+</p>
 
 
 
