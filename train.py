@@ -209,15 +209,7 @@ class TrainHandler:
 
 def main(args):
     config_args = {}
-    project_conf_path = "configs/project.yaml"
     local_conf_path = "configs/local.yaml"
-
-    # Override argparse arguments with project config
-    if os.path.exists(project_conf_path):
-        with open(project_conf_path, 'r') as f:
-            project_conf_path = yaml.safe_load(f)
-            for key, value in project_conf_path.items():
-                setattr(args, key, value)
 
     # Read arguments from passed config
     if args.config:
