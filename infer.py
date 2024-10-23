@@ -1,10 +1,13 @@
 import argparse
+import logging
 import os
 import warnings
 
 import numpy as np
 import pandas as pd
 import torch
+import yaml
+
 import wandb
 
 from src.data.dataset import ImageDataset
@@ -16,6 +19,7 @@ warnings.filterwarnings("ignore", ".*A new version of Albumentations is*")
 
 
 def save_predictions_to_excel(image_paths, y_pred, output_path):
+    logging.info(f"Saving predictions.xlsx to {output_path}")
     class_columns = ['Angioectasia', 'Bleeding', 'Erosion', 'Erythema', 'Foreign Body', 'Lymphangiectasia', 'Normal',
                      'Polyp', 'Ulcer', 'Worms']
     y_pred_classes = np.argmax(y_pred, axis=1)
@@ -67,18 +71,23 @@ def get_image_batch(dataset, start_idx, batch_size):
 
 
 def main(args):
-    api = wandb.Api()
-    run = api.run(f'{args.entity}/{args.wandb_project}/{args.run_id}')
-    config = argparse.Namespace(**run.config)
+    config_args = {}
 
-    if args.dataset_path:
-        config.dataset_path = args.dataset_path
+    # Load config file parameters if provided
+    if args.config:
+        with open(args.config, 'r') as f:
+            config_args = yaml.safe_load(f)
 
-    if args.dataset_csv_path:
-        config.dataset_csv_path = args.dataset_csv_path
+    # Ensure argparse arguments override config file arguments
+    args_dict = vars(args)
+    for key, value in config_args.items():
+        # If the argparse argument was not provided (None), use the value from the config file
+        if args_dict.get(key) is None:
+            setattr(args, key, value)
+
+    config = argparse.Namespace(**vars(args))
 
     class_mapping = load_class_mapping(os.path.join(config.dataset_csv_path, 'class_mapping.json'))
-    idx_to_class = {v: k for k, v in class_mapping.items()}
 
     _, val_transforms = load_transforms(img_size=config.img_size, transform_path=config.transform_path)
 
@@ -88,7 +97,16 @@ def main(args):
     test_dataset = ImageDataset(test_df, transform=val_transforms)
 
     # Load Model
-    model = prepare_model(ckpt_path=args.ckpt_path, config=config, class_to_idx=class_mapping)
+    try:
+        checkpoint_filename = getattr(config, "checkpoint_filename", None)
+        checkpoint_dir = getattr(config, "pretrained_checkpoint_dir", None)
+        checkpoint_path = None
+        if checkpoint_filename and checkpoint_dir:
+            checkpoint_path = os.path.join(checkpoint_dir, checkpoint_filename)
+    except AttributeError:
+        raise ValueError("Checkpoint filename and directory not provided.")
+
+    model = prepare_model(ckpt_path=checkpoint_path, config=config, class_to_idx=class_mapping)
     if torch.cuda.is_available():
         model = model.cuda()
 
@@ -117,19 +135,36 @@ def main(args):
     os.makedirs('submission', exist_ok=True)
     img_paths = test_df['proposed_name'].values
 
-    save_predictions_to_excel(image_paths=img_paths, y_pred=preds, output_path='submission/prediction.xlsx')
+    save_predictions_to_excel(image_paths=img_paths, y_pred=preds, output_path=f'{config.save_dir}/prediction.xlsx')
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Predict on images and create a submission xlsx file.")
-    parser.add_argument("--ckpt_path", type=str, required=True, help="Path to the checkpoint file")
-    parser.add_argument("--dataset_path", type=str, required=True, help="Path to the dataset directory")
-    parser.add_argument("--dataset_csv_path", type=str,
-                        help="Path to the dataset csv files. Allows for overriding if required. (Default is the path from the checkpoint config)")
+    warnings.filterwarnings("ignore", message=".*Torch was not compiled with flash attention.*")
+    os.environ['NO_ALBUMENTATIONS_UPDATE'] = '1'
 
-    parser.add_argument("--run_id", type=str, required=True, help="Run ID to fetch")
-    parser.add_argument("--wandb_project", default="SEER", type=str, help="Wandb project name")
-    parser.add_argument("--entity", default="mvrcii_", type=str, help="Wandb entity name")
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--config", type=str, help="Path to configuration file")
+    parser.add_argument("--save_dir", type=str, help="Directory to save the prediction.xlsx file")
+    parser.add_argument("--verbose", action="store_true")
+    # === Paths ===
+    parser.add_argument("--checkpoint_filename", type=str)
+    parser.add_argument("--pretrained_checkpoint_dir", type=str, help="Directory to load pretrained checkpoints from")
+
+    parser.add_argument("--dataset_path", type=str)
+    parser.add_argument("--dataset_csv_path", type=str)
+    parser.add_argument("--class_mapping_filename", default="class_mapping.json", type=str)
+    parser.add_argument("--transform_path", type=str)
+
+    # === Model ===
+    parser.add_argument("--img_size", default=224, type=int)
+
+    # === Optimizer ===
+    parser.add_argument("--optimizer", type=str)
+    parser.add_argument("--lr", type=float)
+    parser.add_argument("--weight_decay", default=2e-4, type=float)
+
+    # === Scheduler ===
+    parser.add_argument("--lambda_factor", type=float, help="Lambda for the scheduler")
 
     arguments = parser.parse_args()
 

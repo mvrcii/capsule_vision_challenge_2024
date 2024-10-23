@@ -32,12 +32,9 @@ For the **Capsule Endoscopy 2024 Challenge**, we leveraged our flexible class ma
 </p>
 
 ## Evaluation Results
-We report the following results:
+We present the performance of our final eva02-base model after pre-training and during the downstream task of training on CE24. These results are compared to our best baseline model during pre-training, as well as the baseline results reported by the CE24 team for various architectures. Accuracy (Acc) refers to balanced accuracy, while F1, AUC, and mAP are reported as macro averages.
 
 <table style="width:100%; border-collapse: collapse;">
-  <caption style="caption-side: top; font-weight: bold;">
-    Performance of our final eva02-base model after pre-training and on the final downstream task of training on CE24, compared to our best baseline model during pre-training and to the baseline results reported for various architectures by the CE24 team. Accuracy (Acc) refers to the balanced accuracy, F1, AUC, and mAP are reported as macro average.
-  </caption>
   <thead>
     <tr>
       <th></th>
@@ -52,7 +49,7 @@ We report the following results:
     <tr>
       <td rowspan="2"><strong>Pre-Training</strong></td>
       <td>eva02-base</td>
-      <td><strong><span style="color: red">0.810</span></strong></td>
+      <td><strong>0.810</strong></td>
       <td><strong>0.976</strong></td>
       <td><strong>0.786</strong></td>
       <td><strong>0.860</strong></td>
@@ -110,26 +107,52 @@ We report the following results:
 <p align="center">
    <img src="assets/val_roc_curve_1.png" width="80%">
 </p>
-<p align="center">
-   <img src="assets/val_roc_curve_2.png" width="80%">
-</p>
 
 
 
 
-
-
-
+---
 ## Usage
+**1) Clone the repository:**
+```bash
+git clone git@github.com:mvnowak/cv2024.git cv2024
+cd cv2024
+```
+- **Note:** We have organized the repository so that everything should be run from the root ("cv2024") directory
 
-1. Create a Virtual Environment with Python 3.11 via ```python3.11 -m venv venv``` and activate
-   it ```source venv/bin/activate```
-2. Install pytorch 2.4.0+cu121
-   via ```pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121```
-3. Install required packages with `pip install -r requirements.txt`
-4. Download the Capsule Vision Challenge
-   2024 [dataset](https://github.com/misahub2023/Capsule-Vision-2024-Challenge?tab=readme-ov-file) from the official
-   GitHub repository, store it in `data/` **in the repository root** and make sure to have the following structure:
+-------------------
+### Requirements
+
+-------------------
+
+**2) Create a virtual environment:**
+```bash
+python3.11 -m venv venv
+source venv/bin/activate
+```
+- **Note:** Use python version 3.11
+
+**3) Install PyTorch:**
+```bash
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+```
+- **Note:** Use pytorch version 2.4.0+cu121
+
+**4) Install the required packages:**
+```bash
+pip install -r requirements.txt
+```
+
+-------------------
+### Download Capsule-Vision Challenge 2024 (CE24) Dataset
+
+-------------------
+
+
+**5) Download Capsule-Vision Challenge
+   2024 Dataset ([GitHub](https://github.com/misahub2023/Capsule-Vision-2024-Challenge?tab=readme-ov-file)):**
+- **Note:** By downloading any of the datasets you agree to the terms of their use.
+- Store the dataset in the `data/` directory **in the repository root** and make sure to have the following structure:
    ```
     data/
     ├── capsulevision/
@@ -151,10 +174,37 @@ We report the following results:
     │   │   │   ├── 00Z0Xo99wp.jpg
     │   │   │   ├── ...
    ```
-5. Download the pre-trained EndoExtend24 model weights via link/command and store them in `pretrained_models/` **in the
-   repository root**
-6. Make sure that your **repository root** is structured as follows:
+  - The dataset can now be found at: ```data/capsulevision```
 
+-------------------
+### Download Pre-trained Model Weights
+
+------------------- 
+
+You can find the weights for both the pre-trained model and the fine-tuned downstream task model below. For an easy
+download on a linux cluster such as slurm, you can use the `gdown` command as shown below.
+
+| **Type**    | **Dataset**  | **Checkpoint**                                                                                                            | **Command**                               |
+|-------------|--------------|---------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
+| Pre-trained | EndoExtend24 | [eva02_base_patch14_224.pt_ee24](https://drive.google.com/file/d/1Ok58RCRvKdq1_VcFn35FQOHyznvq8JFr/view?usp=sharing)      | `gdown 1Ok58RCRvKdq1_VcFn35FQOHyznvq8JFr` |
+| Fine-tuned  | CE24         | [eva02_base_patch14_224.ee24_ft_ce24](https://drive.google.com/file/d/123TjuBw-34bKXBu7njzKjbcObNXsnuEY/view?usp=sharing) | `gdown 123TjuBw-34bKXBu7njzKjbcObNXsnuEY` |
+
+**5) Download Pre-Trained EndoExtend24 Model Weights:**
+- If not yet existent, create the `pretrained_models/` directory **in the repository root**
+- Use the ``gdown`` package to download the checkpoint file:
+```bash
+mkdir pretrained_models
+cd pretrained_models
+gdown 1Ok58RCRvKdq1_VcFn35FQOHyznvq8JFr
+```
+- The checkpoint file can now be found at: ```pretrained_models/eva02_base_patch14_224.pt_ee24.ckpt```
+
+-------------------
+### Final Directory Structure
+
+-------------------
+
+**6) Verify the repository root folder structure:**
 ```
 .
 ├── configs/
@@ -166,7 +216,7 @@ We report the following results:
 │   │   ├── test.csv
 ├── pretrained_models/
 │   ├── eva02_base_patch14_224.pt_ee24.ckpt
-│   ├── eva02_base_patch14_224.ee24_ft_ce24.ckpt   
+│   ├── ...   
 ├── src/
 ├── README.md
 ├── requirements.txt
@@ -175,19 +225,37 @@ We report the following results:
 ├── ...
 ```
 
-7. Run `python train.py --config configs/submission/run_eva02_base_patch14_224.ee24_ft_ce24.yaml` to start fine-tuning
-   the pre-trained EndoExtend24 model.
+-------------------
+### Fine-tune on CE24
 
-## Inference on the Test Set
+-------------------
+
+**7) Fine-tune the pre-trained EndoExtend24 model on CE24 by running:**
+```bash
+python train.py --config configs/submission/run_eva02_base_patch14_224.ee24_ft_ce24.yaml
+```
+- **Note:** The training script will automatically save the best model checkpoint in the `checkpoints/` directory
+- **Optional:** You can also batch the training on a slurm cluster:
+```bash
+python slurm/train.py configs/submission/run_eva02_base_patch14_224.ee24_ft_ce24.yaml <gpu_type>
+```
+- **Note**: When running on slurm you first have to check the `slurm/train.py` script and change the gpu types. You must select a valid gpu type (integer). You can attach to log output with the '-a' flag.
+
+-------------------
+### Inference on CE24 Test Set
+
+-------------------
+**8) Run Inference on the CE24 Test Set:**
+- **Note:** We store our important configurations including transforms via wandb. Therefore, you need to provide a `run_id` to load the correct configuration.
+```bash
+python infer.py \
+--ckpt_path checkpoints/run-20241018_135423-skilled-snow-80/best_epoch38_val_recall_macro0.89.ckpt \
+--run_id rlrkbbvt \
+
+```
+
 
 ## Model Weights
 
-You can find the weights for both the pre-trained model and the fine-tuned downstream task model below. For an easy
-download on a bash cluster such as a slurm master, you can use the `gdown` command as shown below.
-
-| **Type**    | **Dataset**  | **Checkpoint**                                                                                                            | **Command**                               |
-|-------------|--------------|---------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
-| Pre-trained | EndoExtend24 | [eva02_base_patch14_224.pt_ee24](https://drive.google.com/file/d/1Ok58RCRvKdq1_VcFn35FQOHyznvq8JFr/view?usp=sharing)      | `gdown 1Ok58RCRvKdq1_VcFn35FQOHyznvq8JFr` |
-| Fine-tuned  | CE24         | [eva02_base_patch14_224.ee24_ft_ce24](https://drive.google.com/file/d/123TjuBw-34bKXBu7njzKjbcObNXsnuEY/view?usp=sharing) | `gdown 123TjuBw-34bKXBu7njzKjbcObNXsnuEY` |
 
 ## Introduction

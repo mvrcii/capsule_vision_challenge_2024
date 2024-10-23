@@ -16,3 +16,6 @@ torchaudio==2.4.0+cu121
 uri-template==1.3.0
 wandb==0.17.7
 webcolors==24.8.0
+torchmetrics
+scikit-learn
+PyYAML
