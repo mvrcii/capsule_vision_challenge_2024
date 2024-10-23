@@ -52,7 +52,7 @@ We report the following results:
     <tr>
       <td rowspan="2"><strong>Pre-Training</strong></td>
       <td>eva02-base</td>
-      <td><strong>0.810</strong></td>
+      <td><strong><span style="color: red">0.810</span></strong></td>
       <td><strong>0.976</strong></td>
       <td><strong>0.786</strong></td>
       <td><strong>0.860</strong></td>
