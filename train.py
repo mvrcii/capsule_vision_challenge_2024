@@ -21,6 +21,7 @@ from src.models.timm.timm_model import TimmModel
 from src.utils.class_mapping import load_class_mapping
 from src.utils.transform_utils import load_transforms
 
+warnings.filterwarnings("ignore", ".*A new version of Albumentations is*")
 warnings.filterwarnings("ignore", category=UserWarning, module='pydantic')
 
 torch.set_float32_matmul_precision('medium')
