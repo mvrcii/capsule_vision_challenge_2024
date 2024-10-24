@@ -213,6 +213,8 @@ gdown 1Ok58RCRvKdq1_VcFn35FQOHyznvq8JFr
 **6) Verify the repository root folder structure:**
 ```
 .
+├── assets/
+├── checkpoints/
 ├── configs/
 ├── data/
 ├── datasets/
@@ -223,12 +225,15 @@ gdown 1Ok58RCRvKdq1_VcFn35FQOHyznvq8JFr
 ├── pretrained_models/
 │   ├── eva02_base_patch14_224.pt_ee24.ckpt
 │   ├── ...   
+├── slurm/
 ├── src/
+├── submission/
+│   ├── predictions.xlsx
+├── .gitignore
+├── infer.py
 ├── README.md
 ├── requirements.txt
-├── infer.py
 ├── train.py
-├── ...
 ```
 
 -------------------
