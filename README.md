@@ -285,7 +285,8 @@ python infer.py --config configs/submission/run_eva02_base_patch14_224.ee24_ft_c
 ---
 
 **8b) Run Inference with the provided checkpoint:**
-- Make sure that the provided fine-tuned [checkpoint](https://drive.google.com/file/d/123TjuBw-34bKXBu7njzKjbcObNXsnuEY/view) is downloaded and stored in the `./pretrained_models/` directory.
+- **Required:** Make sure that the provided fine-tuned [checkpoint](https://drive.google.com/file/d/123TjuBw-34bKXBu7njzKjbcObNXsnuEY/view) is downloaded and stored in the `./pretrained_models/` directory.
+- **Required:** Make sure that the `training` directory is downloaded and placed within `data/capsulevision` in the **repository root**.
 - **Required:** Refactor the `--dataset_path <DATASET_PATH>` so that it matches your actual data directory.
 - **Note:** You (usually) do not have to change the other arguments.
 - _Optional:_ Increase the batch size with `--val_bs <BATCHSIZE>` to speed up inference.
