@@ -34,6 +34,7 @@ For the **Capsule Endoscopy 2024 Challenge**, we leveraged our flexible class ma
 ## Evaluation Results
 We present the performance of our final eva02-base model after pre-training and during the downstream task of training on CE24. These results are compared to our best baseline model during pre-training, as well as the baseline results reported by the CE24 team for various architectures. Accuracy (Acc) refers to balanced accuracy, while F1, AUC, and mAP are reported as macro averages.
 
+<div align="center">
 <table style="width:100%; border-collapse: collapse;">
   <thead>
     <tr>
@@ -99,7 +100,7 @@ We present the performance of our final eva02-base model after pre-training and 
     </tr>
   </tbody>
 </table>
-
+</div>
 
 <p align="center">
    <img src="assets/val_conf_mat.png" width="80%">
