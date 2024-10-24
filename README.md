@@ -257,9 +257,3 @@ python infer.py \
 --run_id rlrkbbvt \
 
 ```
-
-
-## Model Weights
-
-
-## Introduction
