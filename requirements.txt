@@ -19,3 +19,4 @@ webcolors==24.8.0
 torchmetrics
 scikit-learn
 PyYAML
+gdown
