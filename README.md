@@ -39,10 +39,10 @@ We present the performance of our final eva02-base model after pre-training and 
     <tr>
       <th></th>
       <th>Model</th>
-      <th>Acc</th>
-      <th>AUC</th>
-      <th>F1</th>
-      <th>mAP</th>
+      <th>balanced Acc</th>
+      <th>macro AUC</th>
+      <th>macro F1</th>
+      <th>macro mAP</th>
     </tr>
   </thead>
   <tbody>
