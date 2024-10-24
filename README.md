@@ -155,6 +155,8 @@ pip install -r requirements.txt
 
 **5) Download Capsule-Vision Challenge
    2024 Dataset ([GitHub](https://github.com/misahub2023/Capsule-Vision-2024-Challenge?tab=readme-ov-file)):**
+1. **Train and Validation** Dataset ([Link](https://figshare.com/articles/dataset/Training_and_Validation_Dataset_of_Capsule_Vision_2024_Challenge/26403469?file=48018562))
+2.  **Test** Dataset ([Link](https://figshare.com/articles/dataset/Testing_Dataset_of_Capsule_Vision_2024_Challenge/27200664?file=49717386))
 - **Note:** By downloading any of the datasets you agree to the terms of their use.
 - Store the dataset in the `data/` directory **in the repository root** and make sure to have the following structure:
    ```
