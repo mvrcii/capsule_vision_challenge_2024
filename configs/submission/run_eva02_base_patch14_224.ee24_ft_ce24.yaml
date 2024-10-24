@@ -11,6 +11,7 @@ dataset_path: "data/"  # Change to data dir containing the 'training', 'validati
 dataset_csv_path: "datasets/ce24"
 
 # === Checkpoints ===
+checkpoint_dir: "checkpoints/"
 pretrained_checkpoint_dir: "pretrained_models/"
 checkpoint_filename: "eva02_base_patch14_224.pt_ee24.ckpt"
 

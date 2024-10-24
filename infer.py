@@ -115,7 +115,7 @@ def main(args):
     if torch.cuda.is_available():
         model = model.cuda()
 
-    batch_size = 8
+    batch_size = config.val_bs
     num_batches = (len(test_dataset) // batch_size) + 1
 
     logging.info(f"Predicting on {len(test_dataset)} images in {num_batches} batches")
@@ -151,8 +151,10 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--config", type=str, help="Path to configuration file")
-    parser.add_argument("--save_dir", type=str, required=True, help="Directory to save the prediction.xlsx file")
+    parser.add_argument("--save_dir", type=str, default="submission", help="Directory to save the prediction.xlsx file")
     parser.add_argument("--verbose", action="store_true")
+    parser.add_argument("--val_bs", default=32, type=int, help="Batch size for prediction")
+
     # === Paths ===
     parser.add_argument("--checkpoint_filename", type=str)
     parser.add_argument("--pretrained_checkpoint_dir", type=str, help="Directory to load pretrained checkpoints from")
