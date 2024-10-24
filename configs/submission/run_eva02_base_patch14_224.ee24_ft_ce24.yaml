@@ -3,11 +3,11 @@ model_arch: eva02_base_patch14_224.mim_in22k
 model_type: timm
 
 # === WandB ===
-wandb_project: "CV2024"
-entity: "wuesuv"
+wandb_project: <WANDB_PROJECT>  # TO BE INSERTED
+entity: <WANDB_ENTITY>  # TO BE INSERTED
 
 # === Dataset Paths ===
-dataset_path: "data/"  # Change to data dir containing the 'training', 'validation' and 'testing' folders
+dataset_path: "data/"
 dataset_csv_path: "datasets/ce24"
 
 # === Checkpoints ===

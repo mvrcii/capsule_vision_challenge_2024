@@ -242,6 +242,7 @@ gdown 1Ok58RCRvKdq1_VcFn35FQOHyznvq8JFr
 -------------------
 
 **7) Fine-tune the pre-trained EndoExtend24 model on CE24 by running:**
+- **Required:** The fine-tuning requires a wandb project to be setup. Thus, you must replace `<WANDB_PROJECT>` and `<WANDB_ENTITY>` within the `run_eva02_base_patch14_224.ee24_ft_ce24.yaml` config with your wandb parameters.
 ```bash
 python train.py --config configs/submission/run_eva02_base_patch14_224.ee24_ft_ce24.yaml
 ```
