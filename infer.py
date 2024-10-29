@@ -50,11 +50,20 @@ def prepare_model(ckpt_path, config, class_to_idx):
     return model
 
 
-def load_data(dataset_csv_path, dataset_path):
-    test_path = os.path.join(dataset_csv_path, 'test.csv')
-    X_test = pd.read_csv(test_path)
-    X_test['frame_path'] = X_test['frame_path'].apply(lambda x: os.path.join(dataset_path, x))
-    return X_test
+def load_data(dataset_csv_path, dataset_path, dataset_type='test'):
+    csv_path = os.path.join(dataset_csv_path, 'test.csv')
+    if dataset_type == 'val' or dataset_type == 'train':
+        csv_path = os.path.join(dataset_csv_path, 'train_val.csv')
+
+    df = pd.read_csv(csv_path)
+
+    if dataset_type == 'val':
+        df = df[df['fold'] == 0]
+    elif dataset_type == 'train':
+        df = df[df['fold'] > 0]
+
+    df['frame_path'] = df['frame_path'].apply(lambda x: os.path.join(dataset_path, x))
+    return df
 
 
 def get_image_batch(dataset, start_idx, batch_size):
@@ -91,15 +100,16 @@ def main(args):
     config = argparse.Namespace(**vars(args))
 
     config.ft_mode = None
+    dataset_type = getattr(config, "dataset_type", "test")
 
     class_mapping = load_class_mapping(os.path.join(config.dataset_csv_path, 'class_mapping.json'))
 
     _, val_transforms = load_transforms(img_size=config.img_size, transform_path=config.transform_path)
 
-    test_df = load_data(config.dataset_csv_path, config.dataset_path)
+    df = load_data(config.dataset_csv_path, config.dataset_path, dataset_type)
 
     # Initialize Dataset
-    test_dataset = ImageDataset(test_df, transform=val_transforms)
+    dataset = ImageDataset(df, transform=val_transforms)
 
     # Load Model
     try:
@@ -116,15 +126,19 @@ def main(args):
         model = model.cuda()
 
     batch_size = config.val_bs
-    num_batches = (len(test_dataset) // batch_size) + 1
+    num_batches = (len(dataset) // batch_size) + 1
 
-    logging.info(f"Predicting on {len(test_dataset)} images in {num_batches} batches")
+    remove_prefix = os.path.join(config.dataset_path, "capsulevision\\\\")
+    df['frame_path'] = df['frame_path'].str.replace(f'^{remove_prefix}', '', regex=True)
+    img_paths = df['frame_path'].values
+
+    logging.info(f"Predicting on {len(dataset)} images in {num_batches} batches")
 
     preds = []
     for batch_num in tqdm(range(1, num_batches + 1), desc="Processing Batches", unit="batch"):
         current_start_idx = (batch_num - 1) * batch_size
 
-        images = get_image_batch(test_dataset, start_idx=current_start_idx, batch_size=batch_size)
+        images = get_image_batch(dataset, start_idx=current_start_idx, batch_size=batch_size)
 
         if torch.cuda.is_available():
             images = images.cuda()
@@ -140,10 +154,9 @@ def main(args):
     preds = preds.reshape(-1, 10)
 
     os.makedirs('submission', exist_ok=True)
-    img_paths = test_df['proposed_name'].values
 
     os.makedirs(config.save_dir, exist_ok=True)
-    output_path = f'{config.save_dir}/prediction.xlsx'
+    output_path = f'{config.save_dir}/WueVision_predicted_{dataset_type}_dataset.xlsx'
 
     save_predictions_to_excel(image_paths=img_paths, y_pred=preds, output_path=output_path)
 
@@ -161,6 +174,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--dataset_path", type=str)
     parser.add_argument("--dataset_csv_path", type=str)
+    parser.add_argument("--dataset_type", default="test", type=str, help="Type of dataset to load ('train', 'val', 'test')")
     parser.add_argument("--class_mapping_filename", default="class_mapping.json", type=str)
     parser.add_argument("--transform_path", type=str)
 
