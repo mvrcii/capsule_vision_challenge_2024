@@ -1,0 +1,2 @@
+- test.csv is a CSV file with all information regarding the test dataset with 4,385 images
+- train_val.csv is a CSV file with the originally provided 70/30 train/validation split ratio that was used for the submissions prediction results

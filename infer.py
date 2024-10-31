@@ -21,16 +21,33 @@ warnings.filterwarnings("ignore", ".*A new version of Albumentations is*")
 warnings.filterwarnings("ignore", message=".*Torch was not compiled with flash attention.*")
 
 
-def save_predictions_to_excel(image_paths, y_pred, output_path):
+def save_predictions_to_excel(image_paths, y_pred, output_path, dataset_type):
     logging.info(f"Saving predictions.xlsx to {output_path}")
     class_columns = ['Angioectasia', 'Bleeding', 'Erosion', 'Erythema', 'Foreign Body', 'Lymphangiectasia', 'Normal',
                      'Polyp', 'Ulcer', 'Worms']
+
     y_pred_classes = np.argmax(y_pred, axis=1)
-    predicted_class_names = [class_columns[i] for i in y_pred_classes]
+
+    if dataset_type == 'test':
+        predicted_class_names = [class_columns[i] for i in y_pred_classes]
+        df_class = pd.DataFrame({'image_path': image_paths, 'predicted_class': predicted_class_names})
+    else:
+        # Extract dataset name from each image path
+        dataset_names = [image_path.split('\\')[-2] for image_path in image_paths]
+        df_class = pd.DataFrame({'image_path': image_paths, 'Dataset': dataset_names})
+
     df_prob = pd.DataFrame(y_pred, columns=class_columns)
     df_prob.insert(0, 'image_path', image_paths)
-    df_class = pd.DataFrame({'image_path': image_paths, 'predicted_class': predicted_class_names})
+
     df_merged = pd.merge(df_prob, df_class, on='image_path')
+
+    # Rearrange columns to have 'Dataset' as the second column if it exists
+    desired_columns = ['image_path']
+    if 'Dataset' in df_merged.columns:
+        desired_columns.append('Dataset')
+    desired_columns.extend([col for col in df_merged.columns if col not in desired_columns])
+    df_merged = df_merged[desired_columns]
+
     df_merged.to_excel(output_path, index=False)
 
 
@@ -50,11 +67,20 @@ def prepare_model(ckpt_path, config, class_to_idx):
     return model
 
 
-def load_data(dataset_csv_path, dataset_path):
-    test_path = os.path.join(dataset_csv_path, 'test.csv')
-    X_test = pd.read_csv(test_path)
-    X_test['frame_path'] = X_test['frame_path'].apply(lambda x: os.path.join(dataset_path, x))
-    return X_test
+def load_data(dataset_csv_path, dataset_path, dataset_type='test'):
+    csv_path = os.path.join(dataset_csv_path, 'test.csv')
+    if dataset_type == 'val' or dataset_type == 'train':
+        csv_path = os.path.join(dataset_csv_path, 'train_val.csv')
+
+    df = pd.read_csv(csv_path)
+
+    if dataset_type == 'val':
+        df = df[df['fold'] == 0]
+    elif dataset_type == 'train':
+        df = df[df['fold'] > 0]
+
+    df['frame_path'] = df['frame_path'].apply(lambda x: os.path.join(dataset_path, x))
+    return df
 
 
 def get_image_batch(dataset, start_idx, batch_size):
@@ -91,15 +117,16 @@ def main(args):
     config = argparse.Namespace(**vars(args))
 
     config.ft_mode = None
+    dataset_type = getattr(config, "dataset_type", "test")
 
     class_mapping = load_class_mapping(os.path.join(config.dataset_csv_path, 'class_mapping.json'))
 
     _, val_transforms = load_transforms(img_size=config.img_size, transform_path=config.transform_path)
 
-    test_df = load_data(config.dataset_csv_path, config.dataset_path)
+    df = load_data(config.dataset_csv_path, config.dataset_path, dataset_type)
 
     # Initialize Dataset
-    test_dataset = ImageDataset(test_df, transform=val_transforms)
+    dataset = ImageDataset(df, transform=val_transforms)
 
     # Load Model
     try:
@@ -116,15 +143,23 @@ def main(args):
         model = model.cuda()
 
     batch_size = config.val_bs
-    num_batches = (len(test_dataset) // batch_size) + 1
+    num_batches = (len(dataset) // batch_size) + 1
 
-    logging.info(f"Predicting on {len(test_dataset)} images in {num_batches} batches")
+    remove_prefix = os.path.join(config.dataset_path, "capsulevision\\\\")
+    df['frame_path'] = df['frame_path'].str.replace(f'^{remove_prefix}', '', regex=True)
+
+    if dataset_type == 'test':
+        img_paths = df['proposed_name'].values
+    else:
+        img_paths = df['frame_path'].values
+
+    logging.info(f"Predicting on {len(dataset)} images in {num_batches} batches")
 
     preds = []
     for batch_num in tqdm(range(1, num_batches + 1), desc="Processing Batches", unit="batch"):
         current_start_idx = (batch_num - 1) * batch_size
 
-        images = get_image_batch(test_dataset, start_idx=current_start_idx, batch_size=batch_size)
+        images = get_image_batch(dataset, start_idx=current_start_idx, batch_size=batch_size)
 
         if torch.cuda.is_available():
             images = images.cuda()
@@ -140,12 +175,11 @@ def main(args):
     preds = preds.reshape(-1, 10)
 
     os.makedirs('submission', exist_ok=True)
-    img_paths = test_df['proposed_name'].values
 
     os.makedirs(config.save_dir, exist_ok=True)
-    output_path = f'{config.save_dir}/prediction.xlsx'
+    output_path = f'{config.save_dir}/WueVision_predicted_{dataset_type}_dataset.xlsx'
 
-    save_predictions_to_excel(image_paths=img_paths, y_pred=preds, output_path=output_path)
+    save_predictions_to_excel(image_paths=img_paths, y_pred=preds, output_path=output_path, dataset_type=dataset_type)
 
 
 if __name__ == '__main__':
@@ -161,6 +195,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--dataset_path", type=str)
     parser.add_argument("--dataset_csv_path", type=str)
+    parser.add_argument("--dataset_type", default="test", type=str, help="Type of dataset to load ('train', 'val', 'test')")
     parser.add_argument("--class_mapping_filename", default="class_mapping.json", type=str)
     parser.add_argument("--transform_path", type=str)
 
