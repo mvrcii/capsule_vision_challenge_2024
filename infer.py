@@ -21,16 +21,33 @@ warnings.filterwarnings("ignore", ".*A new version of Albumentations is*")
 warnings.filterwarnings("ignore", message=".*Torch was not compiled with flash attention.*")
 
 
-def save_predictions_to_excel(image_paths, y_pred, output_path):
+def save_predictions_to_excel(image_paths, y_pred, output_path, dataset_type):
     logging.info(f"Saving predictions.xlsx to {output_path}")
     class_columns = ['Angioectasia', 'Bleeding', 'Erosion', 'Erythema', 'Foreign Body', 'Lymphangiectasia', 'Normal',
                      'Polyp', 'Ulcer', 'Worms']
+
     y_pred_classes = np.argmax(y_pred, axis=1)
-    predicted_class_names = [class_columns[i] for i in y_pred_classes]
+
+    if dataset_type == 'test':
+        predicted_class_names = [class_columns[i] for i in y_pred_classes]
+        df_class = pd.DataFrame({'image_path': image_paths, 'predicted_class': predicted_class_names})
+    else:
+        # Extract dataset name from each image path
+        dataset_names = [image_path.split('\\')[-2] for image_path in image_paths]
+        df_class = pd.DataFrame({'image_path': image_paths, 'Dataset': dataset_names})
+
     df_prob = pd.DataFrame(y_pred, columns=class_columns)
     df_prob.insert(0, 'image_path', image_paths)
-    df_class = pd.DataFrame({'image_path': image_paths, 'predicted_class': predicted_class_names})
+
     df_merged = pd.merge(df_prob, df_class, on='image_path')
+
+    # Rearrange columns to have 'Dataset' as the second column if it exists
+    desired_columns = ['image_path']
+    if 'Dataset' in df_merged.columns:
+        desired_columns.append('Dataset')
+    desired_columns.extend([col for col in df_merged.columns if col not in desired_columns])
+    df_merged = df_merged[desired_columns]
+
     df_merged.to_excel(output_path, index=False)
 
 
@@ -130,7 +147,11 @@ def main(args):
 
     remove_prefix = os.path.join(config.dataset_path, "capsulevision\\\\")
     df['frame_path'] = df['frame_path'].str.replace(f'^{remove_prefix}', '', regex=True)
-    img_paths = df['frame_path'].values
+
+    if dataset_type == 'test':
+        img_paths = df['proposed_name'].values
+    else:
+        img_paths = df['frame_path'].values
 
     logging.info(f"Predicting on {len(dataset)} images in {num_batches} batches")
 
@@ -158,7 +179,7 @@ def main(args):
     os.makedirs(config.save_dir, exist_ok=True)
     output_path = f'{config.save_dir}/WueVision_predicted_{dataset_type}_dataset.xlsx'
 
-    save_predictions_to_excel(image_paths=img_paths, y_pred=preds, output_path=output_path)
+    save_predictions_to_excel(image_paths=img_paths, y_pred=preds, output_path=output_path, dataset_type=dataset_type)
 
 
 if __name__ == '__main__':
