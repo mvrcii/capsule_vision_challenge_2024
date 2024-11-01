@@ -311,7 +311,7 @@ python infer.py --config configs/submission/run_eva02_base_patch14_224.ee24_ft_c
 
 Please using the following citations for citing our work.
 
-```
+```bibtex
 @article{roth2024domainadaptive,
       title={Domain-Adaptive Pre-training of Self-Supervised Foundation Models for Medical Image Classification in Gastrointestinal Endoscopy}, 
       author={Marcel Roth, Micha V. Nowak, Dr. Adrian Krenzer, Prof. Dr. Frank Puppe},
@@ -322,3 +322,7 @@ Please using the following citations for citing our work.
       url={https://arxiv.org/abs/2410.21302}, 
 }
 ```
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
