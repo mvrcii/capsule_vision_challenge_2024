@@ -262,7 +262,7 @@ python slurm/train.py configs/submission/run_eva02_base_patch14_224.ee24_ft_ce24
 - **Note**: When running on slurm you first have to check the `slurm/train.py` script and change the gpu types. You must select a valid gpu type (integer). You can attach to log output with the '-a' flag.
 
 -------------------
-### Inference on CE24 Test Set
+### Inference on Capsule Vision Challenge 2024 Test Set
 
 -------------------
 - The `infer.py` script can be used to run inference either with a self trained or the provided checkpoint.
