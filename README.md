@@ -9,8 +9,6 @@
 
 
 
-**Authors:** Marcel Roth, Micha V. Nowak, Dr. Adrian Krenzer, Prof. Dr. Frank Puppe
-
 ## Table of Content
 - [Abstract](#abstract)
 - [EndoExtend24](#endoextend24)
