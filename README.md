@@ -12,15 +12,16 @@ A comprehensive study on domain-adaptive pre-training techniques applied to medi
 
 ## Table of Contents
 - [Abstract](#abstract)
-- [EndoExtend24](#endoextend24)
+- [EndoExtend24 Dataset](#endoextend24)
 - [Evaluation Results](#evaluation-results)
 - [Usage](#usage)
-  - [Requirements](#requirements)
-  - [Download Capsule Vision Challenge 2024 Dataset](#download-capsule-vision-challenge-2024-dataset)
-  - [Download Pre-trained Model Weights](#download-pre-trained-model-weights)
-  - [Final Directory Structure](#final-directory-structure)
-  - [Fine-tune on Capsule Vision Challenge 2024 Dataset](#fine-tune-on-capsule-vision-challenge-2024-dataset)
-  - [Inference on Capsule Vision Challenge 2024 Test Set](#inference-on-capsule-vision-challenge-2024-test-set)
+  - [Clone the repository](#1-clone-the-repository)
+  - [Requirements](#2-requirements)
+  - [Download Capsule Vision Challenge 2024 Dataset](#3-download-capsule-vision-challenge-2024-dataset)
+  - [Download Pre-Trained EndoExtend24 Model Weights](#4-download-pre-trained-endoextend24-model-weights)
+  - [Final Directory Structure](#5-final-directory-structure)
+  - [Fine-Tuning](#6-fine-tuning)
+  - [Inference](#7-inference)
 - [Citation](#citation)
 - [License](#license)
 
@@ -173,6 +174,7 @@ pip install -r requirements.txt
 ### 3) Download Capsule Vision Challenge 2024 Dataset
 > [!NOTE]
 > By downloading any of the datasets you agree to the terms of [their](https://github.com/misahub2023/Capsule-Vision-2024-Challenge?tab=readme-ov-file) use.
+
 - Train and Validation [Dataset](https://figshare.com/articles/dataset/Training_and_Validation_Dataset_of_Capsule_Vision_2024_Challenge/26403469?file=48018562)
 - Test Dataset [Dataset](https://figshare.com/articles/dataset/Testing_Dataset_of_Capsule_Vision_2024_Challenge/27200664?file=49717386)
 - Store the dataset in the `data/` directory **in the repository root** and make sure to have the following structure:
@@ -197,8 +199,9 @@ pip install -r requirements.txt
     │   │   │   ├── 00Z0Xo99wp.jpg
     │   │   │   ├── ...
    ```
-  > [!TIP]
-  > The dataset can now be found at ```data/capsulevision```.
+  
+> [!TIP]
+> The dataset can now be found at ```data/capsulevision```.
 
 ---
 
@@ -243,7 +246,8 @@ gdown 1Ok58RCRvKdq1_VcFn35FQOHyznvq8JFr
 
 ---
 
-### 6) Fine-tune on Capsule Vision Challenge 2024 Dataset
+### 6) Fine-Tuning
+Fine-tuning on the Capsule Vision Challenge 2024 Dataset.
 > [!IMPORTANT]  
 > The fine-tuning requires a wandb project to be setup. Thus, you must replace `<WANDB_PROJECT>` and `<WANDB_ENTITY>` within the `run_eva02_base_patch14_224.ee24_ft_ce24.yaml` config with your wandb parameters.
 
@@ -261,9 +265,9 @@ python slurm/train.py configs/submission/run_eva02_base_patch14_224.ee24_ft_ce24
 
 ---
 
-### 7) Inference on Capsule Vision Challenge 2024 Test Set
-
-The `infer.py` script can be used to run inference either with a self trained or the provided checkpoint.
+### 7) Inference
+- Inference on Capsule Vision Challenge 2024 Test Set
+- The `infer.py` script can be used to run inference either with a self trained or the provided checkpoint.
 
 > [!NOTE]
 > The inference script must be run from the **repository root**. We use the **same** config for inference, that was used for fine-tuning.
