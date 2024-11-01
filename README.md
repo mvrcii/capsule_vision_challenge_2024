@@ -1,16 +1,24 @@
+![ChallengeHeader](https://github.com/user-attachments/assets/e75f510b-02a8-4fec-b133-11f4ab6c828d)
+
 # Domain-Adaptive Pre-training of Self-Supervised Foundation Models for Medical Image Classification in Gastrointestinal Endoscopy
 
 
 **Authors:** Marcel Roth, Micha V. Nowak, Dr. Adrian Krenzer, Prof. Dr. Frank Puppe
 
-```
-@article{roth2024domain,
-  title={Domain-Adaptive Pre-training of Self-Supervised Foundation Models for Medical Image Classification in Gastrointestinal Endoscopy},
-  author={Marcel Roth, Micha V. Nowak, Dr. Adrian Krenzer, Prof. Dr. Frank Puppe},
-  journal={arXiv preprint arXiv:XXXXXXX},
-  year={2024}
-}
-```
+## Table of Content
+- [Abstract](#abstract)
+- [EndoExtend24](#endoextend24)
+- [Evaluation Results](#evaluation-results)
+- [Usage](#usage)
+  - [Requirements](#requirements)
+  - [Download Capsule Vision Challenge 2024 Dataset](#download-capsule-vision-challenge-2024-dataset)
+  - [Download Pre-trained Model Weights](#download-pre-trained-model-weights)
+  - [Final Directory Structure](#final-directory-structure)
+  - [Fine-tune on Capsule Vision Challenge 2024 Dataset](#fine-tune-on-capsule-vision-challenge-2024-dataset)
+  - [Inference on Capsule Vision Challenge 2024 Test Set](#inference-on-capsule-vision-challenge-2024-test-set)
+- [Citation](#citation)
+- [License](#license)
+
 
 ## Abstract
 Video capsule endoscopy has transformed gastrointestinal endoscopy (GIE) diagnostics by offering a non-invasive method for capturing detailed images of the gastrointestinal tract, enabling early disease detection. However, its potential is limited by the sheer volume of images generated during the imaging procedure, which can take anywhere from 6-8 hours and often produce up to 1 million images, necessitating automated analysis. Additionally, the variability of these images, combined with the need for expert annotations and the scarcity of large, high-quality labeled datasets, constrains the effectiveness of current medical image analysis models. To address this, we introduce a novel large gastrointestinal endoscopy dataset, called EndoExtend24, created by merging and re-stratifying the train/test splits of ten existing public and private datasets, ensuring no overlap of patient data across splits. EndoExtend24 includes over 226,000 labeled images, as well as dynamic class mappings, which allow unified training across datasets with differing labeling granularity, supporting up to 123 distinct pathological findings. Further, we propose to leverage domain adaptive pre-training of foundation models in computer vision trained with self-supervision on generic image data, to adapt them to the task of GIE medical diagnosis. Specifically, the EVA-02 model, which is based on the vision transformer architecture and was trained on ImageNet-22k with masked image modeling (using EVA-CLIP as a MIM teacher), is pre-trained on the novel EndoExtend24 dataset to achieve domain adaptation, and finally trained on the Capsule Endoscopy 2024 Challenge dataset. Experimental results demonstrate strong performance with an F1 score of **0.88**, an improvement of about **39%** over the baseline model's F1 score of **0.49**. This substantial improvement can be attributed to the fact that the baseline models are relatively primitive compared to the state-of-the-art (SOTA) models employed in our approach. Additionally, the model achieved a macro AUC score of **0.993** and a balanced accuracy of **89.3%**.
@@ -148,7 +156,7 @@ pip install -r requirements.txt
 ```
 
 -------------------
-### Download Capsule-Vision Challenge 2024 (CE24) Dataset
+### Download Capsule-Vision Challenge 2024 Dataset
 
 -------------------
 
@@ -237,7 +245,7 @@ gdown 1Ok58RCRvKdq1_VcFn35FQOHyznvq8JFr
 ```
 
 -------------------
-### Fine-tune on CE24
+### Fine-tune on Capsule Vision Challenge 2024 Dataset
 
 -------------------
 
@@ -295,4 +303,22 @@ Run the following command for inference:
 
 ```bash
 python infer.py --config configs/submission/run_eva02_base_patch14_224.ee24_ft_ce24.yaml --dataset_path <DATASET_PATH> --dataset_csv_path ./datasets/ce24 --pretrained_checkpoint_dir ./pretrained_models/ --checkpoint_filename eva02_base_patch14_224.ee24_ft_ce24.ckpt --val_bs 32
+```
+
+
+---
+## Citation
+
+Please using the following citations for citing our work.
+
+```
+@article{roth2024domainadaptive,
+      title={Domain-Adaptive Pre-training of Self-Supervised Foundation Models for Medical Image Classification in Gastrointestinal Endoscopy}, 
+      author={Marcel Roth, Micha V. Nowak, Dr. Adrian Krenzer, Prof. Dr. Frank Puppe},
+      year={2024},
+      eprint={2410.21302},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2410.21302}, 
+}
 ```
