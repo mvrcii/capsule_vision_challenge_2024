@@ -1,4 +1,4 @@
-![UniversityHeader](https://github.com/mvrcii/capsule_vision_challenge_2024/blob/main/assets/unilogo.png)
+![UniversityHeader](https://github.com/mvrcii/capsule_vision_challenge_2024/blob/main/assets/unilogo_cropped.png)
 
 # Domain-Adaptive Pre-training of Self-Supervised Foundation Models for Medical Image Classification in Gastrointestinal Endoscopy
 
