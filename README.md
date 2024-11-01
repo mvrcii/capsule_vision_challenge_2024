@@ -7,6 +7,7 @@
 [![arXiv](https://img.shields.io/badge/arXiv-2410.21302-B31B1B.svg)](https://arxiv.org/abs/2410.21302)
 [![Cite](https://img.shields.io/badge/Cite-BibTeX-blue.svg)](#citation)
 
+A comprehensive study on domain-adaptive pre-training techniques applied to medical image classification within gastrointestinal endoscopy.
 
 
 ## Table of Content
