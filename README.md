@@ -17,8 +17,8 @@ A comprehensive study on domain-adaptive pre-training techniques applied to medi
 - [Usage](#usage)
   - [Clone the repository](#1-clone-the-repository)
   - [Requirements](#2-requirements)
-  - [Download Capsule Vision Challenge 2024 Dataset](#3-download-capsule-vision-challenge-2024-dataset)
-  - [Download Pre-Trained EndoExtend24 Model Weights](#4-download-pre-trained-endoextend24-model-weights)
+  - [Download Challenge Dataset](#3-download-capsule-vision-challenge-2024-dataset)
+  - [Download Pre-Trained Model Weights](#4-download-pre-trained-model-weights)
   - [Final Directory Structure](#5-final-directory-structure)
   - [Fine-Tuning](#6-fine-tuning)
   - [Inference](#7-inference)
@@ -205,7 +205,7 @@ pip install -r requirements.txt
 
 ---
 
-### 4) Download Pre-Trained EndoExtend24 Model Weights
+### 4) Download Pre-Trained Model Weights
 - If not yet existent, create the `pretrained_models/` directory **in the repository root**
 - Use the ``gdown`` package to download the checkpoint file:
 ```bash
