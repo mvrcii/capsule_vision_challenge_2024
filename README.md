@@ -2,7 +2,6 @@
 
 # Domain-Adaptive Pre-training of Self-Supervised Foundation Models for Medical Image Classification in Gastrointestinal Endoscopy
 
-![Challenge](https://img.shields.io/badge/3rd%20Place-Capsule%20Vision%20Challenge-bronze)
 ![Reproducibility](https://img.shields.io/badge/Reproducible-Yes-brightgreen)
 ![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)
 [![arXiv](https://img.shields.io/badge/arXiv-2410.21302-B31B1B.svg)](https://arxiv.org/abs/2410.21302)
