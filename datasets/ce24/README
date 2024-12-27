@@ -1,0 +1,2 @@
+- test.csv is a CSV file with all information regarding the test dataset with 4,385 images
+- train_val.csv is a CSV file with a redistributed 80/20 train/validation split ratio that was used for the fine-tuning step

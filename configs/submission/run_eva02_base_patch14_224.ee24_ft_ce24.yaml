@@ -1,0 +1,39 @@
+# === Model ===
+model_arch: eva02_base_patch14_224.mim_in22k
+model_type: timm
+
+# === WandB ===
+wandb_project: <WANDB_PROJECT>  # TO BE INSERTED
+entity: <WANDB_ENTITY>  # TO BE INSERTED
+
+# === Dataset Paths ===
+dataset_path: "data/"
+dataset_csv_path: "datasets/ce24"
+
+# === Checkpoints ===
+checkpoint_dir: "checkpoints/"
+pretrained_checkpoint_dir: "pretrained_models/"
+checkpoint_filename: "eva02_base_patch14_224.pt_ee24.ckpt"
+
+# === Transforms ===
+transform_path: "configs/transforms/base_transforms.py"
+
+# === Training Parameters ===
+max_epochs: 50
+seed: 42
+train_bs: 128
+val_bs: 128
+fold_id: 0 # Fold 0 is used for validation and fold 1 for training (see train_val.csv)
+img_size: 224
+num_workers: 8
+ft_mode: full
+
+# === Optimizer ===
+lr: 1e-6
+optimizer: adabelief
+metric: 'val_recall_macro'
+weight_decay: 0.0002
+
+# === Scheduler ===
+scheduler: lambda
+lambda_factor: 0.95

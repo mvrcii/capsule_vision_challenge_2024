@@ -12,9 +12,12 @@ weights
 vissl/
 apex/
 __pycache__
+
 venv/
 .DS_Store
 lightning_logs
+
+logs/
 
 # data
 test_set

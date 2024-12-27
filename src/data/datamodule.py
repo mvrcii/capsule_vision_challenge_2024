@@ -10,7 +10,9 @@ from torch.utils.data import WeightedRandomSampler, DataLoader
 
 from src.data.dataset import ImageDataset
 
+warnings.filterwarnings("ignore", message=".*Torch was not compiled with flash attention.*")
 warnings.filterwarnings("ignore", ".*does not have many workers.*")
+os.environ['NO_ALBUMENTATIONS_UPDATE'] = '1'
 
 
 class DataModule(LightningDataModule):
@@ -63,7 +65,8 @@ class DataModule(LightningDataModule):
         datasets = self.__load_data(csv_files)
 
         X_train = datasets.get('train', None)
-        if X_train: self.calculate_inverse_weights(X_train)
+        if X_train is not None and not X_train.empty:
+            self.calculate_inverse_weights(X_train)
 
         for key, df in datasets.items():
             transform = self.train_transform if key == 'train' else self.val_transform

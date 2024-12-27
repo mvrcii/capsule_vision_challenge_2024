@@ -239,6 +239,9 @@ class AbstractLightningModule(LightningModule, ABC):
         for param in self.backbone.parameters():
             param.requires_grad = False
 
+        if ft_mode is None:
+            return
+
         if ft_mode == FineTuneMode.HEAD.value or ft_mode == FineTuneMode.FULL.value:
             for param in self.classifier.parameters():
                 param.requires_grad = True

@@ -21,6 +21,7 @@ from src.models.timm.timm_model import TimmModel
 from src.utils.class_mapping import load_class_mapping
 from src.utils.transform_utils import load_transforms
 
+warnings.filterwarnings("ignore", ".*A new version of Albumentations is*")
 warnings.filterwarnings("ignore", category=UserWarning, module='pydantic')
 
 torch.set_float32_matmul_precision('medium')
@@ -209,15 +210,7 @@ class TrainHandler:
 
 def main(args):
     config_args = {}
-    project_conf_path = "configs/project.yaml"
     local_conf_path = "configs/local.yaml"
-
-    # Override argparse arguments with project config
-    if os.path.exists(project_conf_path):
-        with open(project_conf_path, 'r') as f:
-            project_conf_path = yaml.safe_load(f)
-            for key, value in project_conf_path.items():
-                setattr(args, key, value)
 
     # Read arguments from passed config
     if args.config:
@@ -248,8 +241,6 @@ def main(args):
 
     args = argparse.Namespace(**wandb.config)
 
-    assert args.fold_id in [0, 1, 2, 3], "Fold ID must be in [0, 1, 2, 3]"
-
     logging.basicConfig(
         format='%(levelname)s: %(message)s',
         level=logging.INFO
@@ -257,9 +248,6 @@ def main(args):
 
     trainer = TrainHandler(args)
     trainer.train()
-
-    # TODO: Activate for testing when test.csv is available
-    # trainer.test()
 
     wandb.finish()
 
