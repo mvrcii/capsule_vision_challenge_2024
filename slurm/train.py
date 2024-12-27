@@ -39,6 +39,7 @@ def main():
 
     slurm_cmd = f'sbatch -p ls6 -J "{args.name}" ' + ' '.join(slurm_args)
     # sbatch -p ls6 -J "e37fd6" --gres=gpu:rtx3090:1 --wrap="python train.py --train_bs 64 --val_bs 64 --seed 42 --model_arch 'regnety_640.seer' --fold_id 3 --max_epochs 100" -o "logs/slurm-%j.out"
+    # sbatch -p ls6 -J sanity --gres=gpu:rtx4090:1 --wrap="python train.py " -o "logs/slurm-%j.out"
     result = subprocess.run(slurm_cmd, shell=True, capture_output=True, text=True)
 
     if result.stdout:
