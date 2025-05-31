@@ -1,0 +1,5 @@
+num_workers: 0
+train_bs: 16
+val_bs: 64
+
+dataset_path: "../../JMU/Masterarbeit/data/"
