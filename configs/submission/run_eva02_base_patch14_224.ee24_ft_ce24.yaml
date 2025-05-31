@@ -8,7 +8,7 @@ entity: <WANDB_ENTITY>  # TO BE INSERTED
 
 # === Dataset Paths ===
 dataset_path: "data/"
-dataset_csv_path: "datasets/ce24"
+dataset_csv_path: "datasets/phase3_redistributed_80_20"
 
 # === Checkpoints ===
 checkpoint_dir: "checkpoints/"

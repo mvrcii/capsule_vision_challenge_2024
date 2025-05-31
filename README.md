@@ -299,7 +299,7 @@ python slurm/train.py configs/submission/run_eva02_base_patch14_224.ee24_ft_ce24
 Run the following command for inference:
 
 ```bash
-python infer.py --config configs/submission/run_eva02_base_patch14_224.ee24_ft_ce24.yaml --dataset_path <DATASET_PATH> --dataset_csv_path ./datasets/ce24 --pretrained_checkpoint_dir <PRETRAINED_CHECKPOINT_DIR> --checkpoint_filename <CHECKPOINT_FILENAME> --val_bs 32
+python infer.py --config configs/submission/run_eva02_base_patch14_224.ee24_ft_ce24.yaml --dataset_path <DATASET_PATH> --dataset_csv_path ./datasets/phase3_redistributed_80_20 --pretrained_checkpoint_dir <PRETRAINED_CHECKPOINT_DIR> --checkpoint_filename <CHECKPOINT_FILENAME> --val_bs 32
 ```
 
 #### 7b) Run inference with the provided checkpoint
@@ -321,7 +321,7 @@ python infer.py --config configs/submission/run_eva02_base_patch14_224.ee24_ft_c
 Run the following command for inference:
 
 ```bash
-python infer.py --config configs/submission/run_eva02_base_patch14_224.ee24_ft_ce24.yaml --dataset_path <DATASET_PATH> --dataset_csv_path ./datasets/ce24 --pretrained_checkpoint_dir ./pretrained_models/ --checkpoint_filename eva02_base_patch14_224.ee24_ft_ce24.ckpt --val_bs 32
+python infer.py --config configs/submission/run_eva02_base_patch14_224.ee24_ft_ce24.yaml --dataset_path <DATASET_PATH> --dataset_csv_path ./datasets/phase3_redistributed_80_20 --pretrained_checkpoint_dir ./pretrained_models/ --checkpoint_filename eva02_base_patch14_224.ee24_ft_ce24.ckpt --val_bs 32
 ```
 
 ---
